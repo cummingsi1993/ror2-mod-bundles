@@ -5,6 +5,7 @@ A monorepo of themed Risk of Rain 2 mod bundles, published independently to Thun
 | Bundle | Theme | Thunderstore |
 |---|---|---|
 | [DefenseBudget](mods/DefenseBudget/) | Income & debt: interest, invoices, severance fees, a void debt collector, a lunar line of credit, and the Artifact of Communism | `Isaac-DefenseBudget` |
+| [SupplyChain](mods/SupplyChain/) | Item-count manipulation: bonus chest drops, automatic restocks, stack amplification, a pyramid scheme, and the Artifact of Diversification | `Isaac-SupplyChain` |
 
 ## Repo layout
 

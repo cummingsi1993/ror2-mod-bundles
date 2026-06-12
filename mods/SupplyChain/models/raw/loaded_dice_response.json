@@ -1,0 +1,1 @@
+{"id":"test-5fcb017a-b624-47b5-bf5a-1b77c8c7978d","status":"COMPLETED","output":{"job_id":"loaded_dice","result":"[CuMesh] CUDA error:\n    File:       /workspace/CuMesh/src/connectivity.cu\n    Line:       526\n    Error code: 9\n    Error text: invalid configuration argument\n","status":"FAILED"}}
