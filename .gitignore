@@ -1,0 +1,12 @@
+bin/
+obj/
+*.zip
+*.blend1
+nohup.out
+
+# generated at publish time
+mods/*/Thunderstore/thunderstore.toml
+mods/*/Thunderstore/*.dll
+
+# raw TRELLIS outputs are large and reproducible from refs via the pipeline
+mods/*/models/raw/*.glb

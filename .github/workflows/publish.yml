@@ -1,0 +1,116 @@
+# Publishes every mod under mods/ whose Thunderstore/manifest.json version is ahead of
+# the version on Thunderstore. Pushing to main with no version bump publishes nothing,
+# so merging work-in-progress is always safe.
+#
+# Requires repository secret TCLI_AUTH_TOKEN (Thunderstore team service-account token).
+name: publish
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: thunderstore-publish
+  cancel-in-progress: false
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      mods: ${{ steps.list.outputs.mods }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: list
+        run: echo "mods=$(ls mods | jq -R -s -c 'split("\n")[:-1]')" >> "$GITHUB_OUTPUT"
+
+  publish:
+    needs: discover
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        mod: ${{ fromJson(needs.discover.outputs.mods) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check whether this version is already published
+        id: version
+        run: |
+          MANIFEST="mods/${{ matrix.mod }}/Thunderstore/manifest.json"
+          NAME=$(jq -r .name "$MANIFEST")
+          LOCAL=$(jq -r .version_number "$MANIFEST")
+          NAMESPACE=$(jq -r .namespace "mods/${{ matrix.mod }}/Thunderstore/publish.json")
+          PUBLISHED=$(curl -s "https://thunderstore.io/api/experimental/package/$NAMESPACE/$NAME/" | jq -r '.latest.version_number // "none"')
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "namespace=$NAMESPACE" >> "$GITHUB_OUTPUT"
+          echo "local=$LOCAL" >> "$GITHUB_OUTPUT"
+          if [ "$LOCAL" = "$PUBLISHED" ]; then
+            echo "Version $LOCAL already on Thunderstore; skipping."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Publishing $NAME $LOCAL (Thunderstore has: $PUBLISHED)"
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-dotnet@v4
+        if: steps.version.outputs.publish == 'true'
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build
+        if: steps.version.outputs.publish == 'true'
+        run: dotnet build "mods/${{ matrix.mod }}/${{ matrix.mod }}/${{ matrix.mod }}.csproj" -c Debug
+
+      - name: Assemble package
+        if: steps.version.outputs.publish == 'true'
+        run: |
+          TS="mods/${{ matrix.mod }}/Thunderstore"
+          cp "mods/${{ matrix.mod }}/${{ matrix.mod }}/bin/Debug/netstandard2.1/${{ matrix.mod }}.dll" "$TS/"
+          cd "$TS"
+          zip -j "${{ matrix.mod }}.zip" manifest.json README.md icon.png "${{ matrix.mod }}.dll"
+
+      - name: Generate tcli config
+        if: steps.version.outputs.publish == 'true'
+        run: |
+          python3 - <<'EOF'
+          import json
+          mod = "${{ matrix.mod }}"
+          ts = f"mods/{mod}/Thunderstore"
+          manifest = json.load(open(f"{ts}/manifest.json"))
+          publish = json.load(open(f"{ts}/publish.json"))
+          deps = []
+          for dep in manifest["dependencies"]:
+              namespace, rest = dep.split("-", 1)
+              name, version = rest.rsplit("-", 1)
+              deps.append(f'"{namespace}-{name}" = "{version}"')
+          toml = f'''[config]
+          schemaVersion = "0.0.1"
+
+          [package]
+          namespace = "{publish["namespace"]}"
+          name = "{manifest["name"]}"
+          versionNumber = "{manifest["version_number"]}"
+          description = "{manifest["description"]}"
+          websiteUrl = "{manifest["website_url"]}"
+          containsNsfwContent = false
+
+          [package.dependencies]
+          {chr(10).join(deps)}
+
+          [publish]
+          repository = "https://thunderstore.io"
+          communities = {json.dumps(publish["communities"])}
+          categories = {json.dumps(publish["categories"])}
+          '''
+          toml = "\n".join(line.lstrip() for line in toml.splitlines()) + "\n"
+          open(f"{ts}/thunderstore.toml", "w").write(toml)
+          print(toml)
+          EOF
+
+      - name: Publish to Thunderstore
+        if: steps.version.outputs.publish == 'true'
+        run: |
+          dotnet tool install --global tcli
+          TS="mods/${{ matrix.mod }}/Thunderstore"
+          tcli publish --config-path "$TS/thunderstore.toml" --file "$TS/${{ matrix.mod }}.zip" --token "${{ secrets.TCLI_AUTH_TOKEN }}"

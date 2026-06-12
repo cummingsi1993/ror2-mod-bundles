@@ -1,0 +1,13 @@
+{
+    "name": "DefenseBudget",
+    "version_number": "1.0.0",
+    "description": "Income-themed item pack: interest, invoices, severance fees, a void debt collector, and a lunar line of credit.",
+    "website_url": "https://isaaccummings.com",
+    "dependencies": [
+        "bbepis-BepInExPack-5.4.2121",
+        "RiskofThunder-HookGenPatcher-1.2.9",
+        "RiskofThunder-R2API_Items-1.0.8",
+        "RiskofThunder-R2API_Language-1.1.0",
+        "RiskofThunder-R2API_ContentManagement-1.0.11"
+    ]
+}
