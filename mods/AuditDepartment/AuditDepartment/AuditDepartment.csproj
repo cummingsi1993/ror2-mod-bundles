@@ -1,0 +1,83 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <AssemblyName>AuditDepartment</AssemblyName>
+    <RootNamespace>AuditDepartment</RootNamespace>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BepInEx.Analyzers" Version="1.0.8">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="BepInEx.Core" Version="5.4.21" />
+    <PackageReference Include="MMHOOK.RoR2" Version="2025.6.3" />
+    <PackageReference Include="R2API.Items" Version="1.0.7" />
+    <PackageReference Include="R2API.Language" Version="1.0.1" />
+    <PackageReference Include="RiskOfRain2.GameLibs" Version="1.3.9-r.0" />
+    <PackageReference Include="UnityEngine" Version="5.6.1" />
+    <PackageReference Include="UnityEngine.CoreModule" Version="2020.3.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="assets\*.rgba" LogicalName="AuditDepartment.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="models\*.obj" LogicalName="AuditDepartment.models.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="models\*.rgba" LogicalName="AuditDepartment.models.%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Facepunch.Steamworks">
+      <HintPath>libs\Facepunch.Steamworks.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="KdTreeLib">
+      <HintPath>libs\KdTreeLib.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Mono.Security">
+      <HintPath>libs\Mono.Security.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="pb_Stl">
+      <HintPath>libs\pb_Stl.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Poly2Tri">
+      <HintPath>libs\Poly2Tri.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="ProBuilderCore">
+      <HintPath>libs\ProBuilderCore.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="ProBuilderMeshOps">
+      <HintPath>libs\ProBuilderMeshOps.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Rewired_Windows_Lib">
+      <HintPath>libs\Rewired_Windows_Lib.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="SimpleJSON">
+      <HintPath>libs\SimpleJSON.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Wwise">
+      <HintPath>libs\Wwise.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Zio">
+      <HintPath>libs\Zio.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- local-only deploy to the Thunderstore Mod Manager test profile; skipped on CI -->
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(OS)' == 'Windows_NT' And '$(CI)' == ''">
+    <Exec Command="xcopy &quot;.\bin\debug\netstandard2.1&quot; &quot;C:\Users\cummi\AppData\Roaming\Thunderstore Mod Manager\DataFolder\RiskOfRain2\profiles\mod_testing\BepInEx\plugins&quot; /s /e /Y" />
+  </Target>
+
+</Project>
+
