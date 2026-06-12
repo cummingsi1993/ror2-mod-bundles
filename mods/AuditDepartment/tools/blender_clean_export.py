@@ -7,8 +7,8 @@ import os
 import sys
 import numpy as np
 
-RAW = "D:/source/DefenseBudget/mods/AuditDepartment/models/raw"
-OUT = "D:/source/DefenseBudget/mods/AuditDepartment/AuditDepartment/models"
+RAW = "D:/source/DefenseBudget/.claude/worktrees/auditdepartment/mods/AuditDepartment/models/raw"
+OUT = "D:/source/DefenseBudget/.claude/worktrees/auditdepartment/mods/AuditDepartment/AuditDepartment/models"
 TARGET_FACES = 8000
 TEX_SIZE = 512
 
@@ -124,7 +124,7 @@ def render_preview(obj, item):
     scene.display.shading.color_type = 'TEXTURE'
     scene.render.resolution_x = 512
     scene.render.resolution_y = 512
-    scene.render.filepath = f"D:/source/DefenseBudget/mods/AuditDepartment/models/clean/{item}_preview.png"
+    scene.render.filepath = f"D:/source/DefenseBudget/.claude/worktrees/auditdepartment/mods/AuditDepartment/models/clean/{item}_preview.png"
     bpy.ops.render.render(write_still=True)
 
 ok = 0

@@ -3,7 +3,7 @@
 # 1024 voxel volume of solid shapes blows the WSL2 memory ceiling during extraction).
 # Assumes: tostui-trellis2 running (port 3002), http server on 8765 serving models/refs.
 set -u
-RAW=/d/source/DefenseBudget/mods/AuditDepartment/models/raw
+RAW=/d/source/DefenseBudget/.claude/worktrees/auditdepartment/mods/AuditDepartment/models/raw
 OUT=/d/tools/trellis-output
 
 echo "waiting for TRELLIS.2 API..."
@@ -13,7 +13,7 @@ for i in $(seq 1 60); do
 done
 echo "API reachable, submitting jobs"
 
-for item in bulk_order loaded_dice standing_order force_multiplier pyramid_scheme recall_notice; do
+for item in red_tape line_item_veto hostile_takeover stimulus_package off_the_books; do
   echo "=== $item: submitting $(date +%H:%M:%S) ==="
   resp=$(curl -sS -m 2400 -X POST http://localhost:3002/runsync \
     -H "Content-Type: application/json" \
