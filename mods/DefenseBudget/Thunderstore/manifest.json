@@ -1,6 +1,6 @@
 {
     "name": "DefenseBudget",
-    "version_number": "1.0.0",
+    "version_number": "1.0.1",
     "description": "Income-themed item pack: interest, invoices, severance fees, a void debt collector, and a lunar line of credit.",
     "website_url": "https://isaaccummings.com",
     "dependencies": [
