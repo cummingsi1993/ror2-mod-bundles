@@ -23,6 +23,9 @@ $usage = @{
     'RoR2.Chat' = @('SendBroadcastChat')
     'RoR2.LocalUserManager' = @('GetFirstLocalUser')
     'RoR2.RoR2Application' = @('onLoad')
+    # Purchase Order command-choice path
+    'RoR2.PickupPickerController' = @('GenerateOptionsFromArray','SetOptionsServer')
+    'RoR2.Artifacts.CommandArtifactManager' = @('commandCubePrefab')
 }
 
 foreach ($typeName in ($usage.Keys | Sort-Object)) {

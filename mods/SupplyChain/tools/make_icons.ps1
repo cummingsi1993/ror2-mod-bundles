@@ -100,6 +100,24 @@ New-RingIcon 'pyramid_scheme' @(130,180,255) {
     ))
 }
 
+# Purchase Order (green): order form with a green approval check
+New-RingIcon 'purchase_order' @(120,220,130) {
+    param($g)
+    $g.FillRectangle((SB 240 238 228), 34, 28, 60, 74)
+    $g.DrawRectangle((PN 120 120 125 3), 34, 28, 60, 74)
+    # header band
+    $g.FillRectangle((SB 120 220 130), 34, 28, 60, 12)
+    # line items
+    $p = PN 150 148 140 3
+    $g.DrawLine($p, 42, 50, 78, 50)
+    $g.DrawLine($p, 42, 60, 78, 60)
+    $g.DrawLine($p, 42, 70, 70, 70)
+    # big approval checkmark
+    $a = PN 40 165 70 7
+    $g.DrawLine($a, 46, 84, 58, 96)
+    $g.DrawLine($a, 58, 96, 86, 66)
+}
+
 # Recall Notice (void purple): envelope with return arrow
 New-RingIcon 'recall_notice' @(190,120,235) {
     param($g)

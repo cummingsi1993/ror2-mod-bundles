@@ -24,7 +24,7 @@ namespace SupplyChain.Items
             BonusChanceMax = config.Bind("LoadedDice", "BonusChanceMax", 0.40f,
                 "Maximum chance.");
             StageCapBase = config.Bind("LoadedDice", "StageCapBase", 2,
-                "Maximum bonus drops per stage with one stack (+1 per additional stack). Shared with Recall Notice.");
+                "Maximum bonus drops per stage with one stack (+1 per additional stack). Recall Notice has its own separate cap.");
 
             Def = Assets.CreateItemDef(
                 "LoadedDice", "LOADED_DICE", ItemTier.Tier2,

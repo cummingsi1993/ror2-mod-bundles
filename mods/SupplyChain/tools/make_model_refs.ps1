@@ -99,4 +99,19 @@ $sf = New-Object System.Drawing.StringFormat; $sf.Alignment='Center'; $sf.LineAl
 $g.DrawString('R', $font, (SB 70 28 100), (New-Object System.Drawing.RectangleF(472,548,96,96)), $sf)
 $bmp.Save("$out\recall_notice_ref.png"); $g.Dispose(); $bmp.Dispose()
 
+# ---- purchase_order: order-form sheet, 3/4 tilt, green check + a pen across it
+$bmp, $g = New-Canvas
+$g.FillPolygon((SB 210 208 198), @( (PT 300 250), (PT 720 270), (PT 700 800), (PT 280 780) ))           # back/shadow sheet
+$g.FillPolygon((SB 248 246 238), @( (PT 280 230), (PT 700 250), (PT 680 778), (PT 260 758) ))           # top sheet
+$g.DrawPolygon((PN 150 148 140 4), @( (PT 280 230), (PT 700 250), (PT 680 778), (PT 260 758) ))
+$g.FillPolygon((SB 90 200 110), @( (PT 280 230), (PT 700 250), (PT 696 322), (PT 277 302) ))            # green header band
+$lp = PN 150 148 140 6
+$g.DrawLine($lp, 300, 380, 650, 396); $g.DrawLine($lp, 300, 440, 650, 456); $g.DrawLine($lp, 300, 500, 560, 514); $g.DrawLine($lp, 300, 560, 640, 576)
+$a = PN 40 170 70 22
+$g.DrawLine($a, 330, 620, 420, 710); $g.DrawLine($a, 420, 710, 640, 470)                                # green approval check
+$g.FillPolygon((SB 40 60 130), @( (PT 470 760), (PT 740 300), (PT 770 320), (PT 500 780) ))             # pen barrel
+$g.FillPolygon((SB 220 200 90), @( (PT 740 300), (PT 770 320), (PT 786 286) ))                          # nib
+$g.FillPolygon((SB 30 40 90), @( (PT 470 760), (PT 500 780), (PT 486 800) ))                            # cap end
+$bmp.Save("$out\purchase_order_ref.png"); $g.Dispose(); $bmp.Dispose()
+
 Write-Host "supplychain refs written to $out"
