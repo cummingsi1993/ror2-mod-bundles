@@ -114,4 +114,22 @@ $g.FillPolygon((SB 220 200 90), @( (PT 740 300), (PT 770 320), (PT 786 286) ))  
 $g.FillPolygon((SB 30 40 90), @( (PT 470 760), (PT 500 780), (PT 486 800) ))                            # cap end
 $bmp.Save("$out\purchase_order_ref.png"); $g.Dispose(); $bmp.Dispose()
 
+# ---- dropshipping: cardboard parcel 3/4 with a shipping label and a blue down-arrow
+$bmp, $g = New-Canvas
+$g.FillPolygon((SB 196 150 96), @( (PT 270 380), (PT 660 380), (PT 780 300), (PT 390 300) ))           # top
+$g.FillPolygon((SB 168 122 70), @( (PT 270 380), (PT 660 380), (PT 660 760), (PT 270 760) ))           # front
+$g.FillPolygon((SB 132 92 50), @( (PT 660 380), (PT 780 300), (PT 780 680), (PT 660 760) ))            # side
+$p = PN 96 62 28 7
+$g.DrawPolygon($p, @( (PT 270 380), (PT 660 380), (PT 660 760), (PT 270 760) ))
+$g.DrawPolygon($p, @( (PT 660 380), (PT 780 300), (PT 780 680), (PT 660 760) ))
+$g.DrawPolygon((PN 96 62 28 6), @( (PT 270 380), (PT 660 380), (PT 780 300), (PT 390 300) ))
+$g.DrawLine($p, 465, 380, 465, 760)                                                                     # tape seam (front)
+$g.DrawLine((PN 210 200 180 6), 270, 380, 660, 380)                                                     # tape (top edge)
+$g.FillRectangle((SB 245 245 238), 330, 470, 150, 110)                                                  # shipping label
+$g.DrawRectangle((PN 150 150 145 4), 330, 470, 150, 110)
+$g.DrawLine((PN 90 90 95 5), 350, 505, 460, 505); $g.DrawLine((PN 90 90 95 5), 350, 530, 460, 530); $g.DrawLine((PN 90 90 95 5), 350, 555, 420, 555)
+$a = PN 70 130 235 16                                                                                   # blue delivery down-arrow above box
+$g.DrawLine($a, 465, 150, 465, 270); $g.DrawLine($a, 425, 232, 465, 272); $g.DrawLine($a, 505, 232, 465, 272)
+$bmp.Save("$out\dropshipping_ref.png"); $g.Dispose(); $bmp.Dispose()
+
 Write-Host "supplychain refs written to $out"

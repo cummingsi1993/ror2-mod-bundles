@@ -32,12 +32,33 @@ namespace SupplyChain
         internal static void Init()
         {
             On.RoR2.PurchaseInteraction.OnInteractionBegin += TrackOpener;
+            On.RoR2.PurchaseInteraction.GetInteractability += GateDropshippingChests;
             On.RoR2.ChestBehavior.ItemDrop += OnChestItemDrop;
             Stage.onServerStageBegin += _ =>
             {
                 bonusDropsThisStage = 0;
                 commandChoicesThisStage = 0;
             };
+        }
+
+        private static bool IsMoneyChest(PurchaseInteraction self) =>
+            self && self.costType == CostTypeIndex.Money && self.GetComponent<ChestBehavior>();
+
+        // Dropshipping holders never handle product: grey out gold chests for them so the
+        // prompt reads as unavailable rather than silently doing nothing.
+        private static Interactability GateDropshippingChests(
+            On.RoR2.PurchaseInteraction.orig_GetInteractability orig,
+            PurchaseInteraction self, Interactor activator)
+        {
+            if (IsMoneyChest(self) && activator)
+            {
+                var body = activator.GetComponent<CharacterBody>();
+                if (body && Dropshipping.Held(body.master))
+                {
+                    return Interactability.ConditionsNotMet;
+                }
+            }
+            return orig(self, activator);
         }
 
         private static void TrackOpener(
@@ -55,6 +76,12 @@ namespace SupplyChain
                     var master = body ? body.master : null;
                     if (master)
                     {
+                        // Dropshipping holders cannot open chests — hard server-side block
+                        // (the greyed prompt is best-effort UI; this is the authority).
+                        if (Dropshipping.Held(master))
+                        {
+                            return; // skip orig: chest stays closed, no gold spent
+                        }
                         var opener = chest.GetComponent<ChestOpener>();
                         if (!opener)
                         {

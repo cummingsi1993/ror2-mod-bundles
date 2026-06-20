@@ -26,6 +26,10 @@ $usage = @{
     # Purchase Order command-choice path
     'RoR2.PickupPickerController' = @('GenerateOptionsFromArray','SetOptionsServer')
     'RoR2.Artifacts.CommandArtifactManager' = @('commandCubePrefab')
+    # Dropshipping path (AttemptGrant is hooked, not called — private-at-runtime is fine for hooks)
+    'RoR2.GenericPickupController' = @('AttemptGrant','pickupIndex')
+    'RoR2.PlayerCharacterMasterController' = @('instances','master')
+    'RoR2.CharacterBody' = @('master')
 }
 
 foreach ($typeName in ($usage.Keys | Sort-Object)) {

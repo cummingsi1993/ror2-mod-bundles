@@ -118,6 +118,22 @@ New-RingIcon 'purchase_order' @(120,220,130) {
     $g.DrawLine($a, 58, 96, 86, 66)
 }
 
+# Dropshipping (lunar blue ring): parcel with a delivery down-arrow into it
+New-RingIcon 'dropshipping' @(130,180,255) {
+    param($g)
+    # down arrow above the box (the "drop")
+    $a = PN 130 180 255 7
+    $g.DrawLine($a, 64, 26, 64, 50)
+    $g.DrawLine($a, 54, 41, 64, 51)
+    $g.DrawLine($a, 74, 41, 64, 51)
+    # parcel
+    $g.FillRectangle((SB 150 105 55), 38, 56, 52, 42)
+    $g.DrawRectangle((PN 100 65 30 3), 38, 56, 52, 42)
+    # tape seam
+    $g.DrawLine((PN 210 200 180 3), 64, 56, 64, 98)
+    $g.DrawLine((PN 210 200 180 3), 38, 70, 90, 70)
+}
+
 # Recall Notice (void purple): envelope with return arrow
 New-RingIcon 'recall_notice' @(190,120,235) {
     param($g)
