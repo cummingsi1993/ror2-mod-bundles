@@ -13,7 +13,7 @@ for i in $(seq 1 60); do
 done
 echo "API reachable, submitting jobs"
 
-for item in bulk_order loaded_dice standing_order force_multiplier pyramid_scheme recall_notice; do
+for item in bulk_order loaded_dice standing_order force_multiplier pyramid_scheme purchase_order dropshipping recall_notice; do
   echo "=== $item: submitting $(date +%H:%M:%S) ==="
   resp=$(curl -sS -m 2400 -X POST http://localhost:3002/runsync \
     -H "Content-Type: application/json" \

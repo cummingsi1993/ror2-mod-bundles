@@ -18,7 +18,7 @@ namespace SupplyChain
         public const string PluginGUID = PluginAuthor + "." + PluginName;
         public const string PluginAuthor = "Isaac_Cummings";
         public const string PluginName = "SupplyChain";
-        public const string PluginVersion = "1.0.0";
+        public const string PluginVersion = "1.0.1";
 
         public static ConfigEntry<KeyboardShortcut> DebugSpawnPackKey;
 
@@ -34,6 +34,8 @@ namespace SupplyChain
             StandingOrder.Init(Config);
             ForceMultiplier.Init(Config);
             PyramidScheme.Init(Config);
+            PurchaseOrder.Init(Config);
+            Dropshipping.Init(Config);
             RecallNotice.Init(Config);
             ArtifactOfDiversification.Init(Config);
             ChestHooks.Init();
@@ -55,7 +57,7 @@ namespace SupplyChain
 
         private static void BuildIndexSets()
         {
-            foreach (var def in new[] { BulkOrder.Def, LoadedDice.Def, StandingOrder.Def, ForceMultiplier.Def, PyramidScheme.Def, RecallNotice.Def })
+            foreach (var def in new[] { BulkOrder.Def, LoadedDice.Def, StandingOrder.Def, ForceMultiplier.Def, PyramidScheme.Def, PurchaseOrder.Def, Dropshipping.Def, RecallNotice.Def })
             {
                 if (def && def.itemIndex != ItemIndex.None)
                 {
@@ -93,10 +95,10 @@ namespace SupplyChain
             }
             Log.Info("Debug: spawning SupplyChain pack");
             var forward = body.gameObject.transform.forward;
-            var defs = new[] { BulkOrder.Def, LoadedDice.Def, StandingOrder.Def, ForceMultiplier.Def, PyramidScheme.Def, RecallNotice.Def };
+            var defs = new[] { BulkOrder.Def, LoadedDice.Def, StandingOrder.Def, ForceMultiplier.Def, PyramidScheme.Def, PurchaseOrder.Def, Dropshipping.Def, RecallNotice.Def };
             for (int i = 0; i < defs.Length; i++)
             {
-                var direction = Quaternion.AngleAxis(-37.5f + 15f * i, Vector3.up) * forward;
+                var direction = Quaternion.AngleAxis(-52.5f + 15f * i, Vector3.up) * forward;
                 PickupDropletController.CreatePickupDroplet(
                     PickupCatalog.FindPickupIndex(defs[i].itemIndex),
                     body.corePosition + Vector3.up * 1.5f,

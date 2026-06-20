@@ -1,4 +1,5 @@
 using RoR2;
+using RoR2.Artifacts;
 using SupplyChain.Artifacts;
 using SupplyChain.Items;
 using System.Collections.Generic;
@@ -9,10 +10,12 @@ namespace SupplyChain
 {
     // Single coordinator for everything that happens when a gold-cost chest opens:
     //   1. Artifact of Diversification rerolls hoarded drops
-    //   2. Loaded Dice / Recall Notice bonus rolls (per-stage capped)
-    //   3. Bulk Order bonus whites
+    //   2. Loaded Dice (chance, tier-down) / Recall Notice (guaranteed, void tier-down)
+    //      bonus rolls — each on its own per-stage cap
+    //   3. Purchase Order command-style choice of the chest's tier (own per-stage cap)
+    //   4. Bulk Order bonus white
     // One ItemDrop hook keeps the ordering explicit instead of relying on hook
-    // registration order across four features.
+    // registration order across features.
     internal static class ChestHooks
     {
         private class ChestOpener : MonoBehaviour
@@ -20,13 +23,42 @@ namespace SupplyChain
             internal CharacterMaster master;
         }
 
+        // Loaded Dice and Recall Notice share this counter — they can never coexist (Recall
+        // corrupts all Loaded Dice), so only one path ever increments it in a given run.
         private static int bonusDropsThisStage;
+        // Purchase Order command choices are counted separately.
+        private static int commandChoicesThisStage;
 
         internal static void Init()
         {
             On.RoR2.PurchaseInteraction.OnInteractionBegin += TrackOpener;
+            On.RoR2.PurchaseInteraction.GetInteractability += GateDropshippingChests;
             On.RoR2.ChestBehavior.ItemDrop += OnChestItemDrop;
-            Stage.onServerStageBegin += _ => bonusDropsThisStage = 0;
+            Stage.onServerStageBegin += _ =>
+            {
+                bonusDropsThisStage = 0;
+                commandChoicesThisStage = 0;
+            };
+        }
+
+        private static bool IsMoneyChest(PurchaseInteraction self) =>
+            self && self.costType == CostTypeIndex.Money && self.GetComponent<ChestBehavior>();
+
+        // Dropshipping holders never handle product: grey out gold chests for them so the
+        // prompt reads as unavailable rather than silently doing nothing.
+        private static Interactability GateDropshippingChests(
+            On.RoR2.PurchaseInteraction.orig_GetInteractability orig,
+            PurchaseInteraction self, Interactor activator)
+        {
+            if (IsMoneyChest(self) && activator)
+            {
+                var body = activator.GetComponent<CharacterBody>();
+                if (body && Dropshipping.Held(body.master))
+                {
+                    return Interactability.ConditionsNotMet;
+                }
+            }
+            return orig(self, activator);
         }
 
         private static void TrackOpener(
@@ -44,6 +76,12 @@ namespace SupplyChain
                     var master = body ? body.master : null;
                     if (master)
                     {
+                        // Dropshipping holders cannot open chests — hard server-side block
+                        // (the greyed prompt is best-effort UI; this is the authority).
+                        if (Dropshipping.Held(master))
+                        {
+                            return; // skip orig: chest stays closed, no gold spent
+                        }
                         var opener = chest.GetComponent<ChestOpener>();
                         if (!opener)
                         {
@@ -89,23 +127,32 @@ namespace SupplyChain
                 pickupDef = rerolled ?? pickupDef;
             }
 
-            // 2. Loaded Dice / Recall Notice bonus roll
-            int diceStacks = inventory.GetItemCount(LoadedDice.Def);
+            // 2. Loaded Dice / Recall Notice bonus roll. Recall (the void corruption) runs
+            // on its own tight cap and drops a void item one tier DOWN — it is no longer a
+            // strict upgrade over Loaded Dice (guaranteed + full-tier was the old problem).
             int recallStacks = inventory.GetItemCount(RecallNotice.Def);
-            if (diceStacks > 0 || recallStacks > 0)
+            int diceStacks = inventory.GetItemCount(LoadedDice.Def);
+            if (recallStacks > 0)
             {
-                int totalStacks = diceStacks + recallStacks;
-                int stageCap = LoadedDice.StageCapBase.Value + (totalStacks - 1);
+                if (bonusDropsThisStage < RecallNotice.StageCapFor(recallStacks))
+                {
+                    var bonus = PickFromList(VoidTierDownListForTier(pickupDef.itemTier));
+                    if (bonus != PickupIndex.none)
+                    {
+                        bonusDropsThisStage++;
+                        SpawnBonus(self, bonus);
+                    }
+                }
+            }
+            else if (diceStacks > 0)
+            {
+                int stageCap = LoadedDice.StageCapBase.Value + (diceStacks - 1);
                 if (bonusDropsThisStage < stageCap)
                 {
-                    bool guaranteed = recallStacks > 0;
-                    float chance = HyperbolicChance(LoadedDice.BonusChanceBase.Value, LoadedDice.BonusChancePerStack.Value, LoadedDice.BonusChanceMax.Value, totalStacks);
-                    if (guaranteed || Run.instance.treasureRng.nextNormalizedFloat < chance)
+                    float chance = HyperbolicChance(LoadedDice.BonusChanceBase.Value, LoadedDice.BonusChancePerStack.Value, LoadedDice.BonusChanceMax.Value, diceStacks);
+                    if (Run.instance.treasureRng.nextNormalizedFloat < chance)
                     {
-                        var list = guaranteed
-                            ? VoidListForTier(pickupDef.itemTier)
-                            : TierDownListForTier(pickupDef.itemTier);
-                        var bonus = PickFromList(list);
+                        var bonus = PickFromList(TierDownListForTier(pickupDef.itemTier));
                         if (bonus != PickupIndex.none)
                         {
                             bonusDropsThisStage++;
@@ -115,7 +162,18 @@ namespace SupplyChain
                 }
             }
 
-            // 3. Bulk Order: bonus white
+            // 3. Purchase Order: a Command-style choice of the chest's tier
+            int purchaseStacks = inventory.GetItemCount(PurchaseOrder.Def);
+            if (purchaseStacks > 0 && commandChoicesThisStage < PurchaseOrder.StageCapFor(purchaseStacks))
+            {
+                float chance = HyperbolicChance(PurchaseOrder.ChanceBase.Value, PurchaseOrder.ChancePerStack.Value, PurchaseOrder.ChanceMax.Value, purchaseStacks);
+                if (Run.instance.treasureRng.nextNormalizedFloat < chance && SpawnCommandChoice(self, pickupDef.itemTier))
+                {
+                    commandChoicesThisStage++;
+                }
+            }
+
+            // 4. Bulk Order: bonus white
             int bulkStacks = inventory.GetItemCount(BulkOrder.Def);
             if (bulkStacks > 0)
             {
@@ -154,14 +212,27 @@ namespace SupplyChain
             }
         }
 
-        private static List<PickupIndex> VoidListForTier(ItemTier tier)
+        // same-tier drop list, for Purchase Order's command options
+        private static List<PickupIndex> TierListForTier(ItemTier tier)
         {
             switch (tier)
             {
-                case ItemTier.Tier3: return Run.instance.availableVoidTier3DropList;
-                case ItemTier.Tier2: return Run.instance.availableVoidTier2DropList;
-                case ItemTier.Boss: return Run.instance.availableVoidBossDropList;
-                default: return Run.instance.availableVoidTier1DropList;
+                case ItemTier.Tier3: return Run.instance.availableTier3DropList;
+                case ItemTier.Tier2: return Run.instance.availableTier2DropList;
+                case ItemTier.Boss: return Run.instance.availableTier3DropList;
+                default: return Run.instance.availableTier1DropList;
+            }
+        }
+
+        // void list one tier below the chest's contents (Recall Notice)
+        private static List<PickupIndex> VoidTierDownListForTier(ItemTier tier)
+        {
+            switch (tier)
+            {
+                case ItemTier.Tier3: return Run.instance.availableVoidTier2DropList;
+                case ItemTier.Tier2: return Run.instance.availableVoidTier1DropList;
+                case ItemTier.Boss: return Run.instance.availableVoidTier3DropList;
+                default: return Run.instance.availableVoidTier1DropList; // tier1 has no lower void tier
             }
         }
 
@@ -190,6 +261,48 @@ namespace SupplyChain
                 pickup,
                 origin.position + Vector3.up * 1.5f,
                 origin.forward * chest.dropForwardVelocityStrength + Vector3.up * chest.dropUpVelocityStrength);
+        }
+
+        // Spawn an Artifact-of-Command-style picker cube offering every item of the tier,
+        // minus this bundle's own items. Reuses the vanilla command cube prefab so the
+        // choice UI, networking, and pickup behaviour are identical to the artifact.
+        private static bool SpawnCommandChoice(ChestBehavior chest, ItemTier tier)
+        {
+            var prefab = CommandArtifactManager.commandCubePrefab;
+            if (!prefab)
+            {
+                Log.Warning("Command cube prefab unavailable; Purchase Order choice skipped.");
+                return false;
+            }
+            var drops = TierListForTier(tier);
+            if (drops == null || drops.Count == 0)
+            {
+                return false;
+            }
+            var filtered = new List<PickupIndex>(drops.Count);
+            foreach (var pickup in drops)
+            {
+                if (!SupplyChainPlugin.BundlePickups.Contains(pickup))
+                {
+                    filtered.Add(pickup);
+                }
+            }
+            if (filtered.Count == 0)
+            {
+                return false;
+            }
+            var options = PickupPickerController.GenerateOptionsFromArray(filtered.ToArray());
+            var origin = chest.dropTransform ? chest.dropTransform : chest.gameObject.transform;
+            var cube = Object.Instantiate(prefab, origin.position + Vector3.up * 1.5f, Quaternion.identity);
+            var picker = cube.GetComponent<PickupPickerController>();
+            if (picker)
+            {
+                // set options before the spawn so they serialize in the initial state
+                picker.SetOptionsServer(options);
+            }
+            NetworkServer.Spawn(cube);
+            Log.Info($"Purchase Order: offered a {tier} command choice ({filtered.Count} options).");
+            return true;
         }
     }
 }
