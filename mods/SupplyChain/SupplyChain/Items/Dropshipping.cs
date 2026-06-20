@@ -49,8 +49,9 @@ namespace SupplyChain.Items
                 "You can no longer open chests — but a cut of everything your teammates collect is drop-shipped to you.");
             LanguageAPI.Add("DROPSHIPPING_DESC",
                 $"<style=cDeath>You can no longer open gold chests.</style> In exchange, for every " +
-                $"<style=cIsUtility>{divisor} items your teammates collect</style> <style=cStack>(scaling with player count)</style>, " +
-                $"a <style=cIsUtility>copy is drop-shipped to you</style>. " +
+                $"<style=cIsUtility>(player count / {divisor}) items your teammates collect</style>, " +
+                $"a <style=cIsUtility>copy is drop-shipped to you</style> " +
+                $"<style=cStack>(throttle divided per stack, up to copying everything)</style>. " +
                 $"<style=cDeath>Useless without teammates.</style>");
             LanguageAPI.Add("DROPSHIPPING_LORE",
                 "The genius of dropshipping is that you never touch the product. You never warehouse it, never inspect it, never pry open a single crate. You stand between the supplier and the customer and take a cut of everything that passes between them — and in this particular arrangement, you are also, somehow, the customer.");
@@ -62,8 +63,7 @@ namespace SupplyChain.Items
             master && master.inventory && Def != null && Def.itemIndex != ItemIndex.None
             && master.inventory.GetItemCount(Def.itemIndex) > 0;
 
-        // One copy per (player count / divisor) teammate collections, floored at 1.
-        private static int CopyThreshold()
+        private static int PlayerCount()
         {
             int players = 0;
             foreach (var pcmc in PlayerCharacterMasterController.instances)
@@ -73,7 +73,17 @@ namespace SupplyChain.Items
                     players++;
                 }
             }
-            return Mathf.Max(1, players / Mathf.Max(1, PlayersPerCopyDivisor.Value));
+            return players;
+        }
+
+        // One copy per (player count / (divisor * stacks)) teammate collections, floored
+        // at 1. More stacks divide the throttle, so income rises and caps when the
+        // threshold reaches 1 — i.e. you copy every item teammates collect, but never more
+        // than they actually pick up (bounded, no runaway).
+        internal static int CopyThreshold(int playerCount, int stacks)
+        {
+            int divisor = Mathf.Max(1, PlayersPerCopyDivisor.Value) * Mathf.Max(1, stacks);
+            return Mathf.Max(1, playerCount / divisor);
         }
 
         private static void CountCollection(On.RoR2.GenericPickupController.orig_AttemptGrant orig, GenericPickupController self, CharacterBody body)
@@ -108,17 +118,25 @@ namespace SupplyChain.Items
                 return;
             }
 
-            int threshold = CopyThreshold();
+            int players = PlayerCount();
             granting = true;
             try
             {
                 foreach (var pcmc in PlayerCharacterMasterController.instances)
                 {
                     var holder = pcmc ? pcmc.master : null;
-                    if (!holder || holder == collector || !Held(holder) || !holder.inventory)
+                    if (!holder || holder == collector || !holder.inventory)
                     {
                         continue; // skim only from OTHER players' collections
                     }
+                    int stacks = Def != null && Def.itemIndex != ItemIndex.None
+                        ? holder.inventory.GetItemCount(Def.itemIndex) : 0;
+                    if (stacks <= 0)
+                    {
+                        continue;
+                    }
+                    // threshold is per-holder: more Dropshipping stacks → smaller throttle
+                    int threshold = CopyThreshold(players, stacks);
                     var ledger = holder.GetComponent<DropshipLedger>();
                     if (!ledger)
                     {
@@ -129,7 +147,7 @@ namespace SupplyChain.Items
                     {
                         ledger.credits -= threshold;
                         holder.inventory.GiveItem(pickupDef.itemIndex, 1);
-                        Log.Info($"Dropshipping: copied {pickupDef.internalName} to {Util.GetBestMasterName(holder)} (1 per {threshold} collected).");
+                        Log.Info($"Dropshipping: copied {pickupDef.internalName} to {Util.GetBestMasterName(holder)} (x{stacks} stacks, 1 per {threshold} collected).");
                     }
                 }
             }
