@@ -2,6 +2,7 @@ using BepInEx.Configuration;
 using HostileWorkplace.Artifacts;
 using R2API;
 using RoR2;
+using System.Reflection;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -23,13 +24,22 @@ namespace HostileWorkplace
         internal static ConfigEntry<float> TelegraphSeconds;
         internal static ConfigEntry<bool> TriggerOnTeleporter;
         internal static ConfigEntry<float> TimedIntervalSeconds;
+        internal static ConfigEntry<bool> MonsterCeasefire;
 
         internal static bool IsOpen { get; private set; }
+
+        // Telegraph or Open — i.e. a window is scheduled or running (for the toggle equipment).
+        internal static bool IsActive => phase != Phase.Idle;
 
         private enum Phase { Idle, Telegraph, Open }
         private static Phase phase = Phase.Idle;
         private static float phaseTimer;
         private static float timedAccum;
+
+        // friendly-fire toggle state
+        private static FriendlyFireManager.FriendlyFireMode savedFfMode;
+        private static bool ffApplied;
+        private static FieldInfo ffScaleField;
 
         internal static void Init(ConfigFile config)
         {
@@ -41,6 +51,8 @@ namespace HostileWorkplace
                 "Open a window when the teleporter begins charging.");
             TimedIntervalSeconds = config.Bind("BetrayalWindow", "TimedIntervalSeconds", 0f,
                 "If greater than 0, also open a window every N seconds of stage time. 0 disables.");
+            MonsterCeasefire = config.Bind("BetrayalWindow", "MonsterCeasefire", false,
+                "If true, combat directors stop spawning while a window is open, so the PvP is clean. Existing monsters remain.");
 
             OpenSeasonBuff = ScriptableObject.CreateInstance<BuffDef>();
             OpenSeasonBuff.name = "HostileWorkplaceOpenSeason";
@@ -52,6 +64,16 @@ namespace HostileWorkplace
 
             TeleporterInteraction.onTeleporterBeginChargingGlobal += OnTeleporterBeginCharging;
             Stage.onServerStageBegin += _ => ResetState();
+
+            // optional monster ceasefire: pause director spawns while a window is open
+            On.RoR2.CombatDirector.Simulate += (orig, self, dt) =>
+            {
+                if (NetworkServer.active && IsOpen && MonsterCeasefire.Value)
+                {
+                    return;
+                }
+                orig(self, dt);
+            };
         }
 
         private static void ResetState()
@@ -60,6 +82,48 @@ namespace HostileWorkplace
             phaseTimer = 0f;
             timedAccum = 0f;
             IsOpen = false;
+            DisableFriendlyFire(); // never leave FF on across a stage transition
+        }
+
+        // Engine-level friendly fire: set the mode so player-vs-player hits land, and pin
+        // the engine's own FF damage scale to 1.0 so the actual PvP scaling is owned solely
+        // by FriendlyFire.OnTakeDamage (deterministic regardless of how the engine applies
+        // its scale). Previous mode is restored on close.
+        private static void EnableFriendlyFire()
+        {
+            if (ffApplied)
+            {
+                return;
+            }
+            savedFfMode = FriendlyFireManager.friendlyFireMode;
+            FriendlyFireManager.friendlyFireMode = FriendlyFireManager.FriendlyFireMode.FriendlyFire;
+            ForceFriendlyFireScale(1f);
+            ffApplied = true;
+        }
+
+        private static void DisableFriendlyFire()
+        {
+            if (!ffApplied)
+            {
+                return;
+            }
+            FriendlyFireManager.friendlyFireMode = savedFfMode;
+            ffApplied = false;
+        }
+
+        private static void ForceFriendlyFireScale(float value)
+        {
+            if (ffScaleField == null)
+            {
+                ffScaleField = typeof(FriendlyFireManager).GetField(
+                    "<friendlyFireDamageScale>k__BackingField",
+                    BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
+                if (ffScaleField == null)
+                {
+                    Log.Warning("FriendlyFireManager scale backing field not found; PvP damage may be off.");
+                }
+            }
+            ffScaleField?.SetValue(null, value);
         }
 
         private static void OnTeleporterBeginCharging(TeleporterInteraction tp)
@@ -131,6 +195,7 @@ namespace HostileWorkplace
             phase = Phase.Open;
             phaseTimer = Mathf.Max(1f, WindowDuration.Value);
             IsOpen = true;
+            EnableFriendlyFire();
             RefreshBuffs();
             Announce($"<color=#ff2a2a>🔪 OPEN SEASON — friendly fire is ON for {Mathf.RoundToInt(WindowDuration.Value)}s!</color>");
         }
@@ -140,6 +205,7 @@ namespace HostileWorkplace
             phase = Phase.Idle;
             phaseTimer = 0f;
             IsOpen = false;
+            DisableFriendlyFire();
             Announce("<color=#6ac77f>Truce restored. Back to work, everyone.</color>");
         }
 

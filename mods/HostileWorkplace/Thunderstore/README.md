@@ -7,6 +7,6 @@ Turn co-op into co-op-with-knives. Enable the **Artifact of Mutiny** and the run
 - **Item theft** — a PvP kill permanently transfers a *percentage of each tier* of the victim's items to the killer; rarer items are stolen less often. The richest player is the juiciest target and has the most to lose.
 - **Best with a revive mod** — kills become a recurring scramble over the same loot instead of knocking someone out of the run.
 
-Opt-in and lobby-voted (it's an artifact), so it only happens when everyone agrees to the bloodbath.
+Plus a **Fire Drill** equipment that lets you pull the alarm to start a window early — or cancel one when you're losing — and an optional monster-ceasefire so the director holds back during the duel.
 
-> Work in progress — the artifact and betrayal-window telegraph are in; friendly fire and item theft are being wired in next.
+Opt-in and lobby-voted (it's an artifact), so it only happens when everyone agrees to the bloodbath. Best with a revive mod.

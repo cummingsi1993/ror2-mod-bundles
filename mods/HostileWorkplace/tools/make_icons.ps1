@@ -67,4 +67,24 @@ Draw-Dagger $g 64 78 30 $true
 Export-Rgba $bmp (Join-Path $out "icon_buff_open_season.rgba")
 $g.Dispose(); $bmp.Dispose()
 
+# Fire Drill equipment: a red alarm pull-station with a handle
+$bmp = New-Object System.Drawing.Bitmap(128, 128, [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
+$g = [System.Drawing.Graphics]::FromImage($bmp)
+$g.SmoothingMode = 'AntiAlias'
+$g.FillEllipse((SB 18 18 26), 5, 5, 118, 118)
+$g.DrawEllipse((PN 235 80 70 5.5), 5, 5, 118, 118)
+# red box
+$g.FillRectangle((SB 200 45 40), 38, 34, 52, 60)
+$g.DrawRectangle((PN 120 20 18 4), 38, 34, 52, 60)
+# white pull handle
+$g.FillRectangle((SB 240 240 235), 46, 46, 36, 16)
+$g.DrawRectangle((PN 120 120 125 2), 46, 46, 36, 16)
+# "PULL" arrow down
+$a = PN 240 240 235 5
+$g.DrawLine($a, 64, 70, 64, 86)
+$g.DrawLine($a, 56, 79, 64, 87)
+$g.DrawLine($a, 72, 79, 64, 87)
+Export-Rgba $bmp (Join-Path $out "icon_fire_drill.rgba")
+$g.Dispose(); $bmp.Dispose()
+
 Write-Host "hostileworkplace icons written"

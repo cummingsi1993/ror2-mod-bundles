@@ -12,20 +12,27 @@ $usage = @{
     'RoR2.Stage' = @('onServerStageBegin')
     # window telegraph + state
     'RoR2.PlayerCharacterMasterController' = @('instances','master')
-    'RoR2.CharacterMaster' = @('GetBody')
-    'RoR2.CharacterBody' = @('HasBuff','AddTimedBuff')
+    'RoR2.CharacterMaster' = @('GetBody','playerCharacterMasterController','inventory')
+    'RoR2.CharacterBody' = @('HasBuff','AddTimedBuff','teamComponent','master')
+    'RoR2.TeamComponent' = @('teamIndex')
     'RoR2.Chat' = @('SendBroadcastChat')
     'RoR2.Run' = @('instance')
     'RoR2.RunArtifactManager' = @('instance','IsArtifactEnabled')
-    # slice 2 (friendly fire) — pre-validated surface
+    # slice 2 (friendly fire). friendlyFireMode is set directly; the FF damage scale is
+    # forced via reflection (intentional, not audited here). Simulate is HOOKED (private ok).
     'RoR2.FriendlyFireManager' = @('friendlyFireMode')
-    'RoR2.HealthComponent' = @('TakeDamage','combinedHealth','fullCombinedHealth','body','alive','Networkhealth')
+    'RoR2.HealthComponent' = @('TakeDamage','combinedHealth','fullCombinedHealth','body','alive')
     'RoR2.DamageInfo' = @('attacker','damage','rejected')
-    # slice 3 (theft) — pre-validated surface
+    'RoR2.CombatDirector' = @('Simulate')
+    # slice 3 (theft) — onCharacterDeathGlobal is subscribe-only (private backing ok)
     'RoR2.Inventory' = @('GiveItem','RemoveItem','GetItemCount','itemAcquisitionOrder')
     'RoR2.DamageReport' = @('attackerMaster','victimMaster','victimBody')
+    'RoR2.GlobalEventManager' = @('onCharacterDeathGlobal')
     'RoR2.ItemCatalog' = @('GetItemDef')
-    'RoR2.ItemDef' = @('tier','hidden')
+    'RoR2.ItemDef' = @('tier','hidden','canRemove')
+    # slice 4 (equipment). PerformEquipmentAction is HOOKED (private ok).
+    'RoR2.EquipmentDef' = @('cooldown','canDrop','enigmaCompatible','canBeRandomlyTriggered','appearsInSinglePlayer','appearsInMultiPlayer','pickupIconSprite','pickupModelPrefab')
+    'RoR2.EquipmentSlot' = @('PerformEquipmentAction')
 }
 
 foreach ($typeName in ($usage.Keys | Sort-Object)) {

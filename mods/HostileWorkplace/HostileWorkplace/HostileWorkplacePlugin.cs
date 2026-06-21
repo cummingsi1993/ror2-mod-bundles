@@ -1,6 +1,7 @@
 using BepInEx;
 using BepInEx.Configuration;
 using HostileWorkplace.Artifacts;
+using HostileWorkplace.Items;
 using R2API;
 using RoR2;
 using UnityEngine;
@@ -30,6 +31,9 @@ namespace HostileWorkplace
 
             ArtifactOfMutiny.Init();
             BetrayalWindow.Init(Config);
+            FriendlyFire.Init(Config);
+            ItemTheft.Init(Config);
+            FireDrill.Init();
 
             // server-side ticker for the window state machine
             var runner = new GameObject("HostileWorkplaceRunner");

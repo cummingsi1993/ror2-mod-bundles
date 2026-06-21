@@ -15,19 +15,28 @@ Designed for groups (it leans on a revive mod, which the author plays with — k
 
 | Slice | Scope | Status |
 |---|---|---|
-| 1 | Artifact + window state machine + telegraph (buff/chat), no combat | **done** |
-| 2 | Friendly fire gating + PvP damage scaling + one-shot protection | planned |
-| 3 | Item theft on PvP kill (per-tier %) | planned |
-| 4 | Polish: leader/bounty marker, monster-ceasefire toggle, start/cancel equipment, screen FX | planned |
+| 1 | Artifact + window state machine + telegraph (buff/chat) | **done** |
+| 2 | Friendly fire gating + PvP damage scaling + one-shot protection | **done** |
+| 3 | Item theft on PvP kill (per-tier %) | **done** |
+| 4 | Fire Drill equipment (start/cancel window) + monster-ceasefire toggle | **done** |
+| 4b | Deferred polish: leader/bounty marker, screen FX | not started |
+
+All four slices are built and deployed but **untested in a live lobby** — needs a multiplayer session with the revive mod and Artifact of Mutiny enabled.
 
 ## Implementation notes
 
 - Window state is server-authoritative (`BetrayalWindow`, ticked by `WindowRunner` on `FixedUpdate`). The "Open Season" `BuffDef` is applied to every player body during a window; buffs are networked on `CharacterBody`, so clients get the on-screen flag for free. Announcements via `Chat.SendBroadcastChat`.
 - Triggers subscribe to `TeleporterInteraction.onTeleporterBeginChargingGlobal`; state resets on `Stage.onServerStageBegin`.
-- Member audit (`tools/audit_members.ps1`) clean — only reads/subscribes touch private-backed members; no new reflection shims.
+- **Friendly fire** (`FriendlyFire.cs`): on open, `BetrayalWindow` sets `FriendlyFireManager.friendlyFireMode = FriendlyFire` and pins the engine's FF damage scale to 1.0 (reflection on the private backing field) so the `HealthComponent.TakeDamage` hook owns scaling deterministically: player→player damage ×`PvpDamageScale` (0.2), one-shot protection (a hit from ≥90% HP leaves you at 1), and minion/turret hits onto players nullified (direct player combat only). Mode restored on close and stage transition.
+- **Item theft** (`ItemTheft.cs`): `GlobalEventManager.onCharacterDeathGlobal`, gated on `IsOpen` + both players. Steals a per-tier fraction of the victim's holdings (white .25 / green .15 / red .08 / boss .05 / lunar 0; void mirrors its colour), fractional amounts rolled probabilistically. Permanent transfer via `RemoveItem`/`GiveItem`.
+- **Fire Drill** equipment (`Items/FireDrill.cs`): `EquipmentSlot.PerformEquipmentAction` hook toggles a window (cancel if active, else start). `appearsInSinglePlayer=false`.
+- **Monster ceasefire** (optional, default off): a `CombatDirector.Simulate` hook suppresses spawns while a window is open.
+- Member audit (`tools/audit_members.ps1`) clean — every private-backed member is read-only, hooked, or subscribed; the only reflection is the intentional FF-scale pin.
 
 ## Testing
 
-**F8** force-opens a window (host only; requires Artifact of Mutiny enabled; `Debug > ForceWindowKey`). F6 is SupplyChain, F7 AuditDepartment. Slice 1 is verifiable solo: enable the artifact, press F8, confirm the telegraph countdown chat, the Open Season buff appearing on your character for the duration, and the truce message on close. Friendly fire / theft aren't wired yet.
+**F8** force-opens a window (host only; requires Artifact of Mutiny enabled; `Debug > ForceWindowKey`). F6 is SupplyChain, F7 AuditDepartment.
+
+Solo you can confirm the *rhythm*: enable the artifact, press F8, watch the telegraph countdown, the Open Season buff for the duration, and the truce message. Friendly fire and theft need a **second player** to verify: during a window confirm (a) you can damage a teammate at reduced damage, (b) you can't one-shot them from full, (c) your minions/turrets can't hurt players, (d) killing a teammate loots a per-tier cut and announces it. The Fire Drill equipment should toggle a window on use; the `MonsterCeasefire` config should halt spawns mid-window when enabled.
 
 Build: `dotnet build HostileWorkplace/HostileWorkplace.csproj` (auto-deploys to the mod_testing profile). Icons: `tools/make_icons.ps1`. (Package icon is still the placeholder copied from AuditDepartment — regenerate before any publish.)
