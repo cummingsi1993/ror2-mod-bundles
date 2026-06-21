@@ -1,3 +1,5 @@
+using BepInEx.Configuration;
+using HostileWorkplace.Artifacts;
 using R2API;
 using RoR2;
 using UnityEngine;
@@ -10,12 +12,23 @@ namespace HostileWorkplace.Items
     // using it cancels it (call an emergency truce when you're losing). Only meaningful with
     // Artifact of Mutiny enabled — BetrayalWindow gates on it. Activation is server-resolved
     // via the PerformEquipmentAction hook.
+    //
+    // Easter egg: pull the alarm with no Artifact of Mutiny (no real "emergency") and it
+    // backfires — a non-lethal self-hit for most of your health. Deliberately not mentioned
+    // in the description.
     internal static class FireDrill
     {
         internal static EquipmentDef Def;
+        internal static ConfigEntry<bool> BackfireEnabled;
+        internal static ConfigEntry<float> BackfireHealthFraction;
 
-        internal static void Init()
+        internal static void Init(ConfigFile config)
         {
+            BackfireEnabled = config.Bind("FireDrill", "BackfireEnabled", true,
+                "Easter egg: using the Fire Drill without Artifact of Mutiny active backfires on the user.");
+            BackfireHealthFraction = config.Bind("FireDrill", "BackfireHealthFraction", 0.8f,
+                "Fraction of max health the backfire deals (non-lethal — can't reduce you below 1 HP).");
+
             Def = ScriptableObject.CreateInstance<EquipmentDef>();
             Def.name = "FireDrill";
             Def.nameToken = "FIRE_DRILL_NAME";
@@ -53,15 +66,50 @@ namespace HostileWorkplace.Items
             {
                 if (NetworkServer.active)
                 {
-                    // toggle: cancel an active window, otherwise start one
-                    if (!BetrayalWindow.ForceClose())
+                    if (ArtifactOfMutiny.Enabled)
                     {
-                        BetrayalWindow.RequestOpen("Someone pulled the fire alarm.");
+                        // toggle: cancel an active window, otherwise start one
+                        if (!BetrayalWindow.ForceClose())
+                        {
+                            BetrayalWindow.RequestOpen("Someone pulled the fire alarm.");
+                        }
+                    }
+                    else if (BackfireEnabled.Value)
+                    {
+                        Backfire(self);
                     }
                 }
                 return true; // consume regardless so the cooldown is consistent across clients
             }
             return orig(self, equipmentDef);
+        }
+
+        // No emergency declared (artifact off) → the alarm backfires on whoever pulled it.
+        // Non-lethal so it's a brutal prank, not an unfair instakill.
+        private static void Backfire(EquipmentSlot self)
+        {
+            var body = self.characterBody;
+            var health = body ? body.healthComponent : null;
+            if (!health || !health.alive)
+            {
+                return;
+            }
+            var info = new DamageInfo
+            {
+                damage = health.fullCombinedHealth * Mathf.Clamp01(BackfireHealthFraction.Value),
+                attacker = body.gameObject,
+                inflictor = null,
+                position = body.corePosition,
+                procCoefficient = 0f,
+                damageType = DamageType.NonLethal | DamageType.BypassArmor,
+                damageColorIndex = DamageColorIndex.Default,
+            };
+            health.TakeDamage(info);
+            Log.Info($"Fire Drill backfired on {Util.GetBestMasterName(body.master)} (no Artifact of Mutiny).");
+            Chat.SendBroadcastChat(new Chat.SimpleChatMessage
+            {
+                baseToken = $"<color=#ff5a5a>{Util.GetBestMasterName(body.master)} pulled the fire alarm with no emergency declared. Management is displeased.</color>"
+            });
         }
     }
 }

@@ -33,7 +33,7 @@ namespace HostileWorkplace
             BetrayalWindow.Init(Config);
             FriendlyFire.Init(Config);
             ItemTheft.Init(Config);
-            FireDrill.Init();
+            FireDrill.Init(Config);
 
             // server-side ticker for the window state machine
             var runner = new GameObject("HostileWorkplaceRunner");
