@@ -5,7 +5,7 @@ An **income-themed item pack**: five items that make gold a resource you manage 
 - **Savings Bond** (white) — every 10 seconds, earn 2% (+2% per stack) interest on your held gold.
 - **Accounts Receivable** (green) — damaging an enemy marks it; marked enemies pay you an extra 10% (+10% per stack) of their bounty when killed by anyone.
 - **Golden Parachute** (red) — upon lethal damage, pay a difficulty-scaled severance fee (on credit, if you carry a Defense Budget) to survive at 15% health instead. Recharges in 45s (-25% per stack).
-- **Final Notice** (void) — corrupts all Rolls of Pennies: 30% (+10% per stack, up to 70%) of incoming damage is billed to your gold instead of your health. Requires Survivors of the Void.
+- **Overtime Pay** (void) — corrupts all Rolls of Pennies: heal 0.75% (+0.75% per stack) of your maximum health every second. Healing past full health (yours or from teammates) steadily earns one small chest's worth of gold for every 100% of your maximum health overhealed — a slow, continuous income for staying topped up. Healing items (Bustling Fungus, Leeching Seed, Rejuvenation Rack...) make it flow faster. Time standing still (the Bazaar) doesn't pay. Requires Survivors of the Void.
 - **Defense Budget** (lunar) — the flagship, detailed below.
 - **Artifact of Communism** — all gold belongs to the collective: one shared pool that every player earns into and spends from. Total income runs slightly below the sum of individual incomes (configurable overhead). Pairs horrifyingly with a teammate who shops irresponsibly.
 
@@ -21,7 +21,7 @@ An **income-themed item pack**: five items that make gold a resource you manage 
 - **Deficit spending** — While in deficit, you deal **+15% damage per stack**. Debt is power. Power is debt.
 - **Default** — If your deficit ever exceeds your credit limit (interest, losing stacks, Brittle Crown...), you **lose 2% of your maximum health per second** until the deficit is repaid below the limit. This damage bypasses armor and blocking.
 
-A yellow **$** buff shows while you are in deficit; it turns red when you have defaulted.
+Your gold counter shows your deficit as a **negative red number** (deeper red once you default), and a yellow **$** buff shows while you are in deficit; it turns red when you have defaulted.
 
 ## Fine print
 
@@ -31,4 +31,9 @@ A yellow **$** buff shows while you are in deficit; it turns red when you have d
 
 ## Requirements
 
-BepInExPack, HookGenPatcher, R2API (Items, Language, ContentManagement).
+BepInExPack, HookGenPatcher, R2API (Items, Language, Networking, ContentManagement). Every player in a lobby needs the same version.
+
+## Changelog
+
+- **1.1.0** — The deficit now shows on the gold counter for every player, not just the host (it was server-only; clients always saw 0). New void item **Overtime Pay** replaces Final Notice as the Roll of Pennies corruption. Adds an R2API_Networking dependency.
+- **1.0.1** — First automated release.

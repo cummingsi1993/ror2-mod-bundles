@@ -116,15 +116,20 @@ New-RingIcon 'golden_parachute' @(235,100,90) {
     $g.FillRectangle((SolidBrush 235 190 80), 60, 92, 8, 8)
 }
 
-# Final Notice (void purple ring): envelope with red stripe and purple seal
-New-RingIcon 'final_notice' @(190,120,235) {
+# Overtime Pay (void purple ring): void-pink heart with a gold $
+New-RingIcon 'overtime_pay' @(190,120,235) {
     param($g)
-    $g.FillRectangle((SolidBrush 240 238 230), 28, 42, 72, 46)
-    $p = New-Object System.Drawing.Pen ([System.Drawing.Color]::FromArgb(255,150,145,132)), 2.5
-    $g.DrawLine($p, 28, 42, 64, 66)
-    $g.DrawLine($p, 100, 42, 64, 66)
-    $g.FillRectangle((SolidBrush 200 30 25), 36, 56, 56, 12)
-    $g.FillEllipse((SolidBrush 96 40 130), 54, 70, 20, 20)
+    $heart = New-Object System.Drawing.Drawing2D.GraphicsPath
+    $heart.AddBezier(64, 44, 56, 26, 24, 28, 26, 54)
+    $heart.AddBezier(26, 54, 28, 72, 50, 86, 64, 100)
+    $heart.AddBezier(64, 100, 78, 86, 100, 72, 102, 54)
+    $heart.AddBezier(102, 54, 104, 28, 72, 26, 64, 44)
+    $heart.CloseFigure()
+    $g.FillPath((SolidBrush 232 84 170), $heart)
+    $g.DrawPath((New-Object System.Drawing.Pen ([System.Drawing.Color]::FromArgb(255,120,30,110)), 3), $heart)
+    $f = New-Object System.Drawing.Font('Georgia', 38, [System.Drawing.FontStyle]::Bold, [System.Drawing.GraphicsUnit]::Pixel)
+    $g.DrawString('$', $f, (SolidBrush 70 20 60), (New-Object System.Drawing.RectangleF(34,38,62,50)), $sfC)
+    $g.DrawString('$', $f, (SolidBrush 255 205 70), (New-Object System.Drawing.RectangleF(32,36,62,50)), $sfC)
 }
 
 # item icon (128) -> rgba

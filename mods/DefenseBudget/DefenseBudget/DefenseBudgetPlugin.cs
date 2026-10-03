@@ -2,7 +2,9 @@ using BepInEx;
 using BepInEx.Configuration;
 using DefenseBudget.Artifacts;
 using DefenseBudget.Items;
+using DefenseBudget.Net;
 using R2API;
+using R2API.Networking;
 using RoR2;
 using System;
 using System.Collections.Generic;
@@ -16,13 +18,14 @@ namespace DefenseBudget
 {
     [BepInDependency(ItemAPI.PluginGUID)]
     [BepInDependency(LanguageAPI.PluginGUID)]
+    [BepInDependency(NetworkingAPI.PluginGUID)]
     [BepInPlugin(PluginGUID, PluginName, PluginVersion)]
     public class DefenseBudgetPlugin : BaseUnityPlugin
     {
         public const string PluginGUID = PluginAuthor + "." + PluginName;
         public const string PluginAuthor = "Isaac_Cummings";
         public const string PluginName = "DefenseBudget";
-        public const string PluginVersion = "1.0.1";
+        public const string PluginVersion = "1.1.0";
 
         private const float DamageTickInterval = 0.5f;
         private const float MultiplierTickInterval = 0.2f;
@@ -47,6 +50,8 @@ namespace DefenseBudget
         // so default damage can never be farmed for gold.
         private static bool applyingDefaultDamage;
 
+        internal static bool ApplyingDefaultDamage => applyingDefaultDamage;
+
         private float interestTimer;
         private float damageTimer;
         private float multiplierTimer;
@@ -61,20 +66,19 @@ namespace DefenseBudget
 
             SavingsBond.Init(Config);
             AccountsReceivable.Init(Config);
-            // order matters: GoldenParachute before FinalNotice, so FinalNotice's
-            // TakeDamage hook runs outermost (bill gold first, then check lethality)
             GoldenParachute.Init(Config);
-            FinalNotice.Init(Config);
+            OvertimePay.Init(Config);
             // must init (and register its GiveMoney hook) BEFORE this plugin's GiveMoney
             // hook below, so tax/debt-repayment runs outermost and the artifact pools the rest
             ArtifactOfCommunism.Init(Config);
+            DebtSync.Init();
 
             On.RoR2.PurchaseInteraction.Awake += PurchaseInteraction_Awake;
             On.RoR2.PurchaseInteraction.CanBeAffordedByInteractor += PurchaseInteraction_CanBeAffordedByInteractor;
             On.RoR2.PurchaseInteraction.OnInteractionBegin += PurchaseInteraction_OnInteractionBegin;
             On.RoR2.CharacterMaster.GiveMoney += CharacterMaster_GiveMoney;
             On.RoR2.HealthComponent.TakeDamage += HealthComponent_TakeDamage;
-            On.RoR2.UI.MoneyText.Update += MoneyText_Update;
+            On.RoR2.UI.HUD.Update += HUD_Update;
             Run.onRunStartGlobal += _ => costTrackers.Clear();
 
             Log.Info($"{PluginName} loaded.");
@@ -98,7 +102,7 @@ namespace DefenseBudget
             DebugSpawnItemKey = Config.Bind("Debug", "SpawnItemKey", new KeyboardShortcut(KeyCode.F3),
                 "Drops a Defense Budget at your feet for testing (host only). Set to an empty shortcut to disable.");
             DebugSpawnPackKey = Config.Bind("Debug", "SpawnPackKey", new KeyboardShortcut(KeyCode.F4),
-                "Drops one of each pack item (Savings Bond, Accounts Receivable, Golden Parachute, Final Notice) for testing (host only).");
+                "Drops one of each pack item (Savings Bond, Accounts Receivable, Golden Parachute, Overtime Pay) for testing (host only).");
         }
 
         private void CreateItem()
@@ -138,86 +142,7 @@ namespace DefenseBudget
         // fallback when the generated dollar_sign model resources are absent
         private static GameObject CreateGlyphModel()
         {
-            try
-            {
-                var gold = new Color(1f, 0.78f, 0.25f);
-                var model = new GameObject("PickupDefenseBudgetGlyph");
-                model.transform.SetParent(Assets.PrefabHolder);
-                model.AddComponent<MeshFilter>().mesh = BuildDollarMesh(0.12f, 0.18f);
-                model.AddComponent<MeshRenderer>().material = Assets.CreatePickupMaterial(gold, null, gold * 0.4f);
-                return model;
-            }
-            catch (Exception e)
-            {
-                Log.Warning($"Falling back to mystery pickup model: {e.Message}");
-                return Assets.MysteryModel();
-            }
-        }
-
-        private static Mesh BuildDollarMesh(float cellSize, float depth)
-        {
-            var vertices = new List<Vector3>();
-            var normals = new List<Vector3>();
-            var uvs = new List<Vector2>();
-            var triangles = new List<int>();
-
-            int rows = DollarGlyph.Length;
-            int cols = DollarGlyph[0].Length;
-            for (int r = 0; r < rows; r++)
-            {
-                for (int c = 0; c < cols; c++)
-                {
-                    if (DollarGlyph[r][c] != 'X')
-                    {
-                        continue;
-                    }
-                    var center = new Vector3(
-                        (c + 0.5f - cols / 2f) * cellSize,
-                        (rows - 1 - r + 0.5f - rows / 2f) * cellSize,
-                        0f);
-                    AddCube(vertices, normals, uvs, triangles, center, new Vector3(cellSize, cellSize, depth));
-                }
-            }
-
-            var mesh = new Mesh();
-            mesh.SetVertices(vertices);
-            mesh.SetNormals(normals);
-            mesh.SetUVs(0, uvs);
-            mesh.SetTriangles(triangles, 0);
-            mesh.RecalculateBounds();
-            return mesh;
-        }
-
-        private static void AddCube(List<Vector3> vertices, List<Vector3> normals, List<Vector2> uvs, List<int> triangles, Vector3 center, Vector3 size)
-        {
-            var half = size * 0.5f;
-            // right, left, up, down, forward, back
-            var faceNormals = new[] { Vector3.right, Vector3.left, Vector3.up, Vector3.down, Vector3.forward, Vector3.back };
-            foreach (var normal in faceNormals)
-            {
-                // build a tangent basis for this face
-                var u = normal == Vector3.up || normal == Vector3.down ? Vector3.right : Vector3.Cross(Vector3.up, normal);
-                var v = Vector3.Cross(normal, u);
-                var faceCenter = center + Vector3.Scale(normal, half);
-                var uHalf = Vector3.Scale(u, half);
-                var vHalf = Vector3.Scale(v, half);
-
-                int baseIndex = vertices.Count;
-                vertices.Add(faceCenter - uHalf - vHalf);
-                vertices.Add(faceCenter - uHalf + vHalf);
-                vertices.Add(faceCenter + uHalf + vHalf);
-                vertices.Add(faceCenter + uHalf - vHalf);
-                for (int i = 0; i < 4; i++)
-                {
-                    normals.Add(normal);
-                }
-                uvs.Add(new Vector2(0f, 0f));
-                uvs.Add(new Vector2(0f, 1f));
-                uvs.Add(new Vector2(1f, 1f));
-                uvs.Add(new Vector2(1f, 0f));
-                // clockwise from outside (Unity front-face winding)
-                triangles.AddRange(new[] { baseIndex, baseIndex + 2, baseIndex + 1, baseIndex, baseIndex + 3, baseIndex + 2 });
-            }
+            return Assets.CreateGlyphModel("PickupDefenseBudgetGlyph", DollarGlyph, new Color(1f, 0.78f, 0.25f), 0.12f, 0.18f);
         }
 
         private void CreateBuffs()
@@ -421,9 +346,33 @@ namespace DefenseBudget
             {
                 return false;
             }
-            var debtTracker = GetDebt(master);
-            double credit = DebtLimit(master) - (debtTracker != null ? debtTracker.debt : 0.0);
+            GetCreditState(master, out double debt, out double limit);
+            double credit = limit - debt;
             return credit > 0.0 && master.money + credit >= self.cost;
+        }
+
+        // Affordability also runs on clients (interaction prompt, outline, sale-star glow),
+        // where there is no DebtTracker — use the server's replicated numbers there. The
+        // server still decides every purchase.
+        private static void GetCreditState(CharacterMaster master, out double debt, out double limit)
+        {
+            if (NetworkServer.active)
+            {
+                var debtTracker = GetDebt(master);
+                debt = debtTracker != null ? debtTracker.debt : 0.0;
+                limit = DebtLimit(master);
+            }
+            else if (DebtSync.TryGet(master, out var view))
+            {
+                debt = view.debt;
+                limit = view.limit;
+            }
+            else
+            {
+                // no snapshot yet: assume a clean slate
+                debt = 0.0;
+                limit = DebtLimit(master);
+            }
         }
 
         private void PurchaseInteraction_OnInteractionBegin(
@@ -500,34 +449,43 @@ namespace DefenseBudget
         // HUD: show deficit as negative gold
         // ---------------------------------------------------------------
 
+        private static readonly Color DeficitColor = new Color(1f, 0.35f, 0.3f);
+        private static readonly Color DefaultedColor = new Color(1f, 0.12f, 0.12f);
         private static Color moneyTextOriginalColor;
         private static bool moneyTextColorCached;
 
-        private void MoneyText_Update(On.RoR2.UI.MoneyText.orig_Update orig, RoR2.UI.MoneyText self)
+        // Per HUD, after vanilla writes moneyText.targetValue from hud.targetMaster.money:
+        // covers splitscreen (one HUD per local user) and spectating (targetMaster follows
+        // the camera target). Reads the replicated snapshot, so it works for every player,
+        // not just the host.
+        private void HUD_Update(On.RoR2.UI.HUD.orig_Update orig, RoR2.UI.HUD self)
         {
-            // Skip non-gold counters (the lunar coin display reuses this component).
-            if (self.targetText && !self.name.Contains("Lunar"))
-            {
-                if (!moneyTextColorCached)
-                {
-                    moneyTextOriginalColor = self.targetText.color;
-                    moneyTextColorCached = true;
-                }
-                var localUser = LocalUserManager.GetFirstLocalUser();
-                var master = localUser?.cachedMaster;
-                var debtTracker = master ? GetDebt(master) : null;
-                if (debtTracker != null && debtTracker.debt > 0.0)
-                {
-                    // Debt only exists server-side, so this shows for the host/solo player.
-                    self.targetValue = -(int)Math.Round(debtTracker.debt);
-                    self.targetText.color = new Color(1f, 0.35f, 0.3f);
-                }
-                else
-                {
-                    self.targetText.color = moneyTextOriginalColor;
-                }
-            }
             orig(self);
+            var moneyText = self.moneyText;
+            if (!moneyText || !moneyText.targetText)
+            {
+                return;
+            }
+            if (!moneyTextColorCached)
+            {
+                moneyTextOriginalColor = moneyText.targetText.color;
+                moneyTextColorCached = true;
+            }
+            if (DebtSync.TryGet(self.targetMaster, out var view) && view.debt > 0)
+            {
+                // Income repays debt first, so an indebted wallet is normally empty. With
+                // the Artifact of Communism it mirrors the shared pool instead — keep
+                // showing that spendable balance, just tinted.
+                if (self.targetMaster.money == 0)
+                {
+                    moneyText.targetValue = -view.debt;
+                }
+                moneyText.targetText.color = view.defaulted ? DefaultedColor : DeficitColor;
+            }
+            else
+            {
+                moneyText.targetText.color = moneyTextOriginalColor;
+            }
         }
 
         // ---------------------------------------------------------------
@@ -562,7 +520,7 @@ namespace DefenseBudget
             if (spawnPack)
             {
                 Log.Info("Debug: spawning item pack");
-                var packDefs = new[] { SavingsBond.Def, AccountsReceivable.Def, GoldenParachute.Def, FinalNotice.Def };
+                var packDefs = new[] { SavingsBond.Def, AccountsReceivable.Def, GoldenParachute.Def, OvertimePay.Def };
                 for (int i = 0; i < packDefs.Length; i++)
                 {
                     var direction = Quaternion.AngleAxis(-30f + 20f * i, Vector3.up) * forward;
@@ -608,6 +566,7 @@ namespace DefenseBudget
             }
 
             SavingsBond.FixedUpdate();
+            OvertimePay.FixedUpdate();
             ArtifactOfCommunism.FixedUpdate();
 
             foreach (var pcmc in PlayerCharacterMasterController.instances)
@@ -649,6 +608,40 @@ namespace DefenseBudget
                     ApplyDefaultDamage(master, body);
                 }
             }
+
+            DebtSync.ServerTick(Time.fixedDeltaTime, FillDebtSnapshot);
+        }
+
+        private static void FillDebtSnapshot(List<DebtSnapshotMessage.Entry> entries)
+        {
+            foreach (var pcmc in PlayerCharacterMasterController.instances)
+            {
+                var master = pcmc.master;
+                if (!master)
+                {
+                    continue;
+                }
+                var debtTracker = GetDebt(master);
+                double debt = debtTracker != null ? debtTracker.debt : 0.0;
+                if (debt <= 0.0 && GetStacks(master) <= 0)
+                {
+                    continue;
+                }
+                entries.Add(new DebtSnapshotMessage.Entry
+                {
+                    masterId = master.netId,
+                    // ceiling, so a fractional debt never displays as 0
+                    debt = ClampToInt(Math.Ceiling(debt)),
+                    // the host's config and difficulty are authoritative
+                    limit = ClampToInt(Math.Floor(DebtLimit(master))),
+                    defaulted = debtTracker != null && debtTracker.wasDefaulted,
+                });
+            }
+        }
+
+        private static int ClampToInt(double value)
+        {
+            return value <= 0.0 ? 0 : value >= int.MaxValue ? int.MaxValue : (int)value;
         }
 
         private static void UpdateBuff(CharacterBody body, BuffDef buff, bool active)
