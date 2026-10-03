@@ -53,8 +53,6 @@ namespace DefenseBudget.Items
             LanguageAPI.Add("GOLDEN_PARACHUTE_LORE",
                 "Section 12(b): In the event of involuntary separation (termination, restructuring, evisceration), the executive shall receive one (1) severance package, deployment automatic, fee deducted from estate.\n\nThe board notes with approval that the executive has never once read Section 12(c): renewal fees.");
 
-            // Registered before FinalNotice.Init so Final Notice's damage billing runs first
-            // (outermost) and a billed-down hit may no longer be lethal.
             On.RoR2.HealthComponent.TakeDamage += InterceptLethal;
         }
 
