@@ -1,6 +1,6 @@
 {
     "name": "AuditDepartment",
-    "version_number": "1.0.0",
+    "version_number": "1.0.1",
     "description": "Monster-economy pack: tax, veto, skim, and audit the combat director's budget.",
     "website_url": "https://github.com/cummingsi1993/ror2-mod-bundles",
     "dependencies": [
