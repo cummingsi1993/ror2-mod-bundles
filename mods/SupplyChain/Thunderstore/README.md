@@ -17,3 +17,8 @@ An **item-count manipulation pack**, calibrated against the Sale Star yardstick 
 - All numbers configurable in `BepInEx/config/Isaac_Cummings.SupplyChain.cfg`.
 
 Pairs with [DefenseBudget](https://thunderstore.io/c/riskofrain2/p/Isaac/DefenseBudget/), the income-themed bundle from the same series.
+
+## Changelog
+
+- **1.0.1** — Removed the debug item-drop hotkey.
+- **1.0.0** — Initial release.

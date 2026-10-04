@@ -22,6 +22,6 @@ Item-count manipulation bundle. Designed against two hard rules learned from the
 
 ## Testing
 
-**F6** drops one of each item (host only; `Debug > SpawnPackKey`). Quick checklist: open chests with Bulk Order/Loaded Dice (watch the per-stage cap), stage transition with Standing Order, stack 10+ of a white with Force Multiplier and watch the behavior jump, grab Pyramid Scheme with a full build, corrupt dice in the Void Fields, and enable Diversification with 5+ of something common.
+Spawn any item with the local-only DevTools plugin (`private/DevTools`: host-only F5–F11 hotkeys spawn Artifact of Command cubes by tier; never published). Quick checklist: open chests with Bulk Order/Loaded Dice (watch the per-stage cap), stage transition with Standing Order, stack 10+ of a white with Force Multiplier and watch the behavior jump, grab Pyramid Scheme with a full build, corrupt dice in the Void Fields, and enable Diversification with 5+ of something common.
 
 Build: `dotnet build SupplyChain/SupplyChain.csproj` (auto-deploys to the mod_testing profile). Models: `tools/make_model_refs.ps1` → `tools/generate_models.sh` → `tools/blender_clean_export.py`.

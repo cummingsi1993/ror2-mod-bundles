@@ -38,4 +38,5 @@ Manual fallback: `mods/<Bundle>/tools/publish_thunderstore.ps1 -Token <token>`.
 1. Copy the `mods/DefenseBudget` structure; the csproj, plugin dll, and Thunderstore package name must all match the bundle directory name.
 2. Each bundle builds against the shared root `nuget.config` (BepInEx feed). The publicized-assembly audit (`tools/audit_members.ps1`) and the image→3D model pipeline (`tools/make_model_refs.ps1` → `generate_models.sh` → `blender_clean_export.py`) are per-bundle copies for now — see `mods/DefenseBudget/tools/`.
 3. Create `Thunderstore/publish.json` with namespace/communities/categories (include `ai-generated`).
+4. Keep debug/testing cheats OUT of bundles — they ship to everyone. CI builds with `-c Debug`, so `#if DEBUG` would still publish them. Put test tooling in the local-only `private/DevTools` plugin instead (it already spawns command cubes for every tier).
 4. Merge to main with a `1.0.0` manifest — the workflow publishes anything Thunderstore doesn't have yet.

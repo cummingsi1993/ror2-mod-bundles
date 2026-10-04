@@ -1,12 +1,9 @@
 using BepInEx;
-using BepInEx.Configuration;
 using R2API;
 using RoR2;
 using SupplyChain.Artifacts;
 using SupplyChain.Items;
 using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.Networking;
 
 namespace SupplyChain
 {
@@ -18,16 +15,11 @@ namespace SupplyChain
         public const string PluginGUID = PluginAuthor + "." + PluginName;
         public const string PluginAuthor = "Isaac_Cummings";
         public const string PluginName = "SupplyChain";
-        public const string PluginVersion = "1.0.0";
-
-        public static ConfigEntry<KeyboardShortcut> DebugSpawnPackKey;
+        public const string PluginVersion = "1.0.1";
 
         public void Awake()
         {
             Log.Init(Logger);
-
-            DebugSpawnPackKey = Config.Bind("Debug", "SpawnPackKey", new KeyboardShortcut(KeyCode.F6),
-                "Drops one of each SupplyChain item for testing (host only). Set to an empty shortcut to disable.");
 
             BulkOrder.Init(Config);
             LoadedDice.Init(Config);
@@ -78,30 +70,6 @@ namespace SupplyChain
                 }
             }
             Log.Info($"SupplyChain index sets: {BundlePickups.Count} bundle pickups, {AmplifiableItems.Count} amplifiable items.");
-        }
-
-        private void Update()
-        {
-            if (!DebugSpawnPackKey.Value.IsDown() || !NetworkServer.active || !Run.instance)
-            {
-                return;
-            }
-            var body = LocalUserManager.GetFirstLocalUser()?.cachedBody;
-            if (!body)
-            {
-                return;
-            }
-            Log.Info("Debug: spawning SupplyChain pack");
-            var forward = body.gameObject.transform.forward;
-            var defs = new[] { BulkOrder.Def, LoadedDice.Def, StandingOrder.Def, ForceMultiplier.Def, PyramidScheme.Def, RecallNotice.Def };
-            for (int i = 0; i < defs.Length; i++)
-            {
-                var direction = Quaternion.AngleAxis(-37.5f + 15f * i, Vector3.up) * forward;
-                PickupDropletController.CreatePickupDroplet(
-                    PickupCatalog.FindPickupIndex(defs[i].itemIndex),
-                    body.corePosition + Vector3.up * 1.5f,
-                    direction * 10f);
-            }
         }
     }
 }
