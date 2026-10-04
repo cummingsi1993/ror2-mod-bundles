@@ -40,6 +40,12 @@ namespace DefenseBudget.Items
         // Called from the plugin's FixedUpdate, server-side with an active run.
         internal static void FixedUpdate()
         {
+            // no interest while a stage exit converts wallets to experience: it waits for
+            // every wallet to sit at 0, and interest would keep restarting it
+            if (SceneExitController.isRunning)
+            {
+                return;
+            }
             timer += Time.fixedDeltaTime;
             if (timer < InterestInterval.Value)
             {

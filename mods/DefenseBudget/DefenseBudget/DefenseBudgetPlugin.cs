@@ -25,7 +25,7 @@ namespace DefenseBudget
         public const string PluginGUID = PluginAuthor + "." + PluginName;
         public const string PluginAuthor = "Isaac_Cummings";
         public const string PluginName = "DefenseBudget";
-        public const string PluginVersion = "1.1.0";
+        public const string PluginVersion = "1.1.1";
 
         private const float DamageTickInterval = 0.5f;
         private const float MultiplierTickInterval = 0.2f;
