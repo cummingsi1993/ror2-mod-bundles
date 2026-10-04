@@ -1,6 +1,6 @@
 {
     "name": "SupplyChain",
-    "version_number": "1.0.1",
+    "version_number": "1.0.2",
     "description": "Item-count manipulation pack: bonus chest drops, command-style picks, automatic restocks, stack amplification, and a pyramid scheme.",
     "website_url": "https://github.com/cummingsi1993/ror2-mod-bundles",
     "dependencies": [

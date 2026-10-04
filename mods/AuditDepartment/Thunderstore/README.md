@@ -17,3 +17,8 @@ A **monster-economy pack**. Risk of Rain 2's combat director literally runs on c
 - All numbers configurable in `BepInEx/config/Isaac_Cummings.AuditDepartment.cfg`.
 
 Part of a series with [DefenseBudget](https://thunderstore.io/c/riskofrain2/p/Isaac/DefenseBudget/) (your economy) and SupplyChain (your items) — this one is about *their* economy.
+
+## Changelog
+
+- **1.0.1** — Removed the debug item-drop hotkey.
+- **1.0.0** — Initial release.

@@ -277,5 +277,90 @@ namespace DefenseBudget
         {
             return Addressables.LoadAssetAsync<GameObject>("RoR2/Base/Mystery/PickupMystery.prefab").WaitForCompletion();
         }
+
+        // A chunky pixel-font glyph extruded from cubes ('X' = filled cell, top row first),
+        // lightly emissive. Used as a model fallback when no generated OBJ is embedded.
+        internal static GameObject CreateGlyphModel(string name, string[] glyph, Color color, float cellSize, float depth)
+        {
+            try
+            {
+                var model = new GameObject(name);
+                model.transform.SetParent(PrefabHolder);
+                model.AddComponent<MeshFilter>().mesh = BuildGlyphMesh(glyph, cellSize, depth);
+                model.AddComponent<MeshRenderer>().material = CreatePickupMaterial(color, null, color * 0.4f);
+                return model;
+            }
+            catch (Exception e)
+            {
+                Log.Warning($"Falling back to mystery pickup model for {name}: {e.Message}");
+                return MysteryModel();
+            }
+        }
+
+        private static Mesh BuildGlyphMesh(string[] glyph, float cellSize, float depth)
+        {
+            var vertices = new List<Vector3>();
+            var normals = new List<Vector3>();
+            var uvs = new List<Vector2>();
+            var triangles = new List<int>();
+
+            int rows = glyph.Length;
+            int cols = glyph[0].Length;
+            for (int r = 0; r < rows; r++)
+            {
+                for (int c = 0; c < cols; c++)
+                {
+                    if (glyph[r][c] != 'X')
+                    {
+                        continue;
+                    }
+                    var center = new Vector3(
+                        (c + 0.5f - cols / 2f) * cellSize,
+                        (rows - 1 - r + 0.5f - rows / 2f) * cellSize,
+                        0f);
+                    AddCube(vertices, normals, uvs, triangles, center, new Vector3(cellSize, cellSize, depth));
+                }
+            }
+
+            var mesh = new Mesh();
+            mesh.SetVertices(vertices);
+            mesh.SetNormals(normals);
+            mesh.SetUVs(0, uvs);
+            mesh.SetTriangles(triangles, 0);
+            mesh.RecalculateBounds();
+            return mesh;
+        }
+
+        private static void AddCube(List<Vector3> vertices, List<Vector3> normals, List<Vector2> uvs, List<int> triangles, Vector3 center, Vector3 size)
+        {
+            var half = size * 0.5f;
+            // right, left, up, down, forward, back
+            var faceNormals = new[] { Vector3.right, Vector3.left, Vector3.up, Vector3.down, Vector3.forward, Vector3.back };
+            foreach (var normal in faceNormals)
+            {
+                // build a tangent basis for this face
+                var u = normal == Vector3.up || normal == Vector3.down ? Vector3.right : Vector3.Cross(Vector3.up, normal);
+                var v = Vector3.Cross(normal, u);
+                var faceCenter = center + Vector3.Scale(normal, half);
+                var uHalf = Vector3.Scale(u, half);
+                var vHalf = Vector3.Scale(v, half);
+
+                int baseIndex = vertices.Count;
+                vertices.Add(faceCenter - uHalf - vHalf);
+                vertices.Add(faceCenter - uHalf + vHalf);
+                vertices.Add(faceCenter + uHalf + vHalf);
+                vertices.Add(faceCenter + uHalf - vHalf);
+                for (int i = 0; i < 4; i++)
+                {
+                    normals.Add(normal);
+                }
+                uvs.Add(new Vector2(0f, 0f));
+                uvs.Add(new Vector2(0f, 1f));
+                uvs.Add(new Vector2(1f, 1f));
+                uvs.Add(new Vector2(1f, 0f));
+                // clockwise from outside (Unity front-face winding)
+                triangles.AddRange(new[] { baseIndex, baseIndex + 2, baseIndex + 1, baseIndex, baseIndex + 3, baseIndex + 2 });
+            }
+        }
     }
 }
