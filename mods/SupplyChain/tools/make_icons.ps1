@@ -100,6 +100,40 @@ New-RingIcon 'pyramid_scheme' @(130,180,255) {
     ))
 }
 
+# Purchase Order (green): order form with a green approval check
+New-RingIcon 'purchase_order' @(120,220,130) {
+    param($g)
+    $g.FillRectangle((SB 240 238 228), 34, 28, 60, 74)
+    $g.DrawRectangle((PN 120 120 125 3), 34, 28, 60, 74)
+    # header band
+    $g.FillRectangle((SB 120 220 130), 34, 28, 60, 12)
+    # line items
+    $p = PN 150 148 140 3
+    $g.DrawLine($p, 42, 50, 78, 50)
+    $g.DrawLine($p, 42, 60, 78, 60)
+    $g.DrawLine($p, 42, 70, 70, 70)
+    # big approval checkmark
+    $a = PN 40 165 70 7
+    $g.DrawLine($a, 46, 84, 58, 96)
+    $g.DrawLine($a, 58, 96, 86, 66)
+}
+
+# Dropshipping (lunar blue ring): parcel with a delivery down-arrow into it
+New-RingIcon 'dropshipping' @(130,180,255) {
+    param($g)
+    # down arrow above the box (the "drop")
+    $a = PN 130 180 255 7
+    $g.DrawLine($a, 64, 26, 64, 50)
+    $g.DrawLine($a, 54, 41, 64, 51)
+    $g.DrawLine($a, 74, 41, 64, 51)
+    # parcel
+    $g.FillRectangle((SB 150 105 55), 38, 56, 52, 42)
+    $g.DrawRectangle((PN 100 65 30 3), 38, 56, 52, 42)
+    # tape seam
+    $g.DrawLine((PN 210 200 180 3), 64, 56, 64, 98)
+    $g.DrawLine((PN 210 200 180 3), 38, 70, 90, 70)
+}
+
 # Recall Notice (void purple): envelope with return arrow
 New-RingIcon 'recall_notice' @(190,120,235) {
     param($g)

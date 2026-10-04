@@ -15,7 +15,7 @@ namespace SupplyChain
         public const string PluginGUID = PluginAuthor + "." + PluginName;
         public const string PluginAuthor = "Isaac_Cummings";
         public const string PluginName = "SupplyChain";
-        public const string PluginVersion = "1.0.1";
+        public const string PluginVersion = "1.0.2";
 
         public void Awake()
         {
@@ -26,6 +26,8 @@ namespace SupplyChain
             StandingOrder.Init(Config);
             ForceMultiplier.Init(Config);
             PyramidScheme.Init(Config);
+            PurchaseOrder.Init(Config);
+            Dropshipping.Init(Config);
             RecallNotice.Init(Config);
             ArtifactOfDiversification.Init(Config);
             ChestHooks.Init();
@@ -47,7 +49,7 @@ namespace SupplyChain
 
         private static void BuildIndexSets()
         {
-            foreach (var def in new[] { BulkOrder.Def, LoadedDice.Def, StandingOrder.Def, ForceMultiplier.Def, PyramidScheme.Def, RecallNotice.Def })
+            foreach (var def in new[] { BulkOrder.Def, LoadedDice.Def, StandingOrder.Def, ForceMultiplier.Def, PyramidScheme.Def, PurchaseOrder.Def, Dropshipping.Def, RecallNotice.Def })
             {
                 if (def && def.itemIndex != ItemIndex.None)
                 {

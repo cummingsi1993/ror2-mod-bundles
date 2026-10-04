@@ -7,15 +7,29 @@ using UnityEngine.AddressableAssets;
 
 namespace SupplyChain.Items
 {
-    // Void (corrupts Loaded Dice): bonus chest drops become guaranteed, but every bonus
-    // item is a void item of the chest's tier. Shares Loaded Dice's per-stage cap.
-    // Mechanics live in ChestHooks; this file is definition + corruption pairing.
+    // Void (corrupts Loaded Dice): bonus chest drops become guaranteed void items, but
+    // unlike Loaded Dice the bonus is ONE TIER BELOW the chest (void), and Recall runs on
+    // its own tight per-stage cap that scales far slower than Loaded Dice's. The old
+    // design reused Loaded Dice's cap verbatim, which was tuned for chance-gated,
+    // tier-down, *random* drops — applied to guaranteed full-tier void it handed out a
+    // void item on nearly every chest once your Loaded Dice stack (which all corrupts at
+    // once) was large. Mechanics live in ChestHooks; this file is definition + config.
     internal static class RecallNotice
     {
         internal static ItemDef Def;
+        internal static ConfigEntry<int> StageCapBase;
+        internal static ConfigEntry<int> StacksPerExtraCap;
+        internal static ConfigEntry<int> StageCapMax;
 
         internal static void Init(ConfigFile config)
         {
+            StageCapBase = config.Bind("RecallNotice", "StageCapBase", 1,
+                "Guaranteed void bonus drops per stage with one stack. Recall has its own cap, separate from Loaded Dice's.");
+            StacksPerExtraCap = config.Bind("RecallNotice", "StacksPerExtraCap", 2,
+                "Additional stacks required to raise the per-stage cap by 1 (slower than Loaded Dice's +1/stack).");
+            StageCapMax = config.Bind("RecallNotice", "StageCapMax", 3,
+                "Hard ceiling on guaranteed void bonus drops per stage, regardless of stacks.");
+
             Def = Assets.CreateItemDef(
                 "RecallNotice", "RECALL_NOTICE", ItemTier.VoidTier2,
                 Assets.LoadSprite("SupplyChain.icon_recall_notice.rgba", 128),
@@ -37,13 +51,24 @@ namespace SupplyChain.Items
 
             LanguageAPI.Add("RECALL_NOTICE_NAME", "Recall Notice");
             LanguageAPI.Add("RECALL_NOTICE_PICKUP",
-                "Chests always ship a bonus item — direct from the manufacturer in the void. <style=cIsVoid>Corrupts all Loaded Dice</style>.");
+                "Chests ship a guaranteed void replacement — one tier down, and rationed. <style=cIsVoid>Corrupts all Loaded Dice</style>.");
             LanguageAPI.Add("RECALL_NOTICE_DESC",
-                $"Gold-cost chests <style=cIsUtility>always</style> drop a bonus item, but the bonus is a " +
-                $"<style=cIsVoid>void item</style> of the chest's tier. " +
-                $"Shares Loaded Dice's per-stage bonus cap. <style=cIsVoid>Corrupts all Loaded Dice</style>.");
+                $"Gold-cost chests drop a <style=cIsVoid>guaranteed void item one tier below their contents</style>, " +
+                $"at most <style=cIsUtility>{StageCapBase.Value} <style=cStack>(+1 per {StacksPerExtraCap.Value} stacks, max {StageCapMax.Value})</style></style> per stage. " +
+                $"<style=cIsVoid>Corrupts all Loaded Dice</style>.");
             LanguageAPI.Add("RECALL_NOTICE_LORE",
-                "URGENT PRODUCT RECALL\nAffected units: all\nDefect: contents replaced during shipping\nRemedy: none. Replacement parts have already been delivered. Please do not attempt to return them.");
+                "URGENT PRODUCT RECALL\nAffected units: all\nDefect: contents replaced during shipping\nRemedy: none. Replacement parts have already been delivered. Please do not attempt to return them.\n\nADDENDUM: shipping volume reduced following complaints that there was simply too much of a good thing.");
+        }
+
+        // Per-stage cap for guaranteed void drops, scaling sub-linearly and clamped.
+        internal static int StageCapFor(int stacks)
+        {
+            if (stacks <= 0)
+            {
+                return 0;
+            }
+            int cap = StageCapBase.Value + (stacks - 1) / Mathf.Max(1, StacksPerExtraCap.Value);
+            return Mathf.Min(cap, StageCapMax.Value);
         }
     }
 }

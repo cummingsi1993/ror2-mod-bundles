@@ -5,8 +5,8 @@ Three themed Risk of Rain 2 bundles, one economic universe: **DefenseBudget** ta
 | Bundle | Theme | Status |
 |---|---|---|
 | DefenseBudget | Your gold as a resource and a liability | **Published** (1.1.2) |
-| SupplyChain | Item-count manipulation | **Published** (1.0.0; 1.0.1 in draft PR #4) |
-| AuditDepartment | The monster director's credit economy | **Published** (1.0.0) |
+| SupplyChain | Item-count manipulation | **Published** (1.0.2) |
+| AuditDepartment | The monster director's credit economy | **Published** (1.0.1) |
 
 ---
 
