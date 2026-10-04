@@ -4,7 +4,7 @@ Three themed Risk of Rain 2 bundles, one economic universe: **DefenseBudget** ta
 
 | Bundle | Theme | Status |
 |---|---|---|
-| DefenseBudget | Your gold as a resource and a liability | **Published** (1.1.1) |
+| DefenseBudget | Your gold as a resource and a liability | **Published** (1.1.2) |
 | SupplyChain | Item-count manipulation | **Published** (1.0.0; 1.0.1 in draft PR #4) |
 | AuditDepartment | The monster director's credit economy | **Published** (1.0.0) |
 
@@ -19,7 +19,7 @@ Three themed Risk of Rain 2 bundles, one economic universe: **DefenseBudget** ta
 | Savings Bond | White | Every 10s, earn 2% (+2%/stack) interest on held gold |
 | Accounts Receivable | Green | Damaging an enemy marks it; marked enemies pay an extra 10% (+10%/stack) of their bounty when killed by anyone |
 | Golden Parachute | Red | On lethal damage, pay a difficulty-scaled severance fee (on credit if you carry a Defense Budget) to survive at 15% health. Recharges 45s (−25%/stack) |
-| Overtime Pay | Void (corrupts Roll of Pennies) | Heal 0.75% (+0.75%/stack) max HP/sec; healing past full health (yours or teammates') steadily pays one small chest's worth of gold per 400% max HP overhealed while the run timer runs (combat-only where it's paused). Healing items raise the trickle |
+| Overtime Pay | Void (corrupts Roll of Pennies) | Heal 0.75% (+0.75%/stack) max HP/sec; healing past full health (yours or teammates') steadily pays one small chest's worth of gold per 100% max HP overhealed while the run timer runs (combat-only where it's paused). Healing items raise the trickle |
 | Defense Budget | Lunar | The flagship — see below |
 | Artifact of Communism | Artifact | All gold belongs to the collective: one shared pool everyone earns into and spends from, with a small configurable overhead |
 
@@ -66,6 +66,6 @@ Three themed Risk of Rain 2 bundles, one economic universe: **DefenseBudget** ta
 - **Overtime Pay + Defense Budget**: overheal payouts go through the income tax and repay deficit first — a healing build is a way out of debt. Defense Budget's default damage eats into overheal instead of paying it.
 - **Pyramid Scheme / Stimulus Package + Savings Bond**: tithes and kickbacks interact with interest on held gold; hoarders feel taxes hardest.
 - **Line-Item Veto / Hostile Takeover + Stimulus Package**: Stimulus inflates director income, which makes vetoes richer and skims fatter — deliberately funding the enemy to rob them is a build.
-- Debug drop keys (host only, configurable per bundle): **F3** Defense Budget lunar / **F4** DefenseBudget pack / **F6** SupplyChain pack / **F7** AuditDepartment pack.
+- Debug drop keys (host only, configurable per bundle): **F6** SupplyChain pack / **F7** AuditDepartment pack.
 
 All numbers configurable per bundle in `BepInEx/config/Isaac_Cummings.<Bundle>.cfg`.

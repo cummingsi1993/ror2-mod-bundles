@@ -25,7 +25,7 @@ namespace DefenseBudget
         public const string PluginGUID = PluginAuthor + "." + PluginName;
         public const string PluginAuthor = "Isaac_Cummings";
         public const string PluginName = "DefenseBudget";
-        public const string PluginVersion = "1.1.1";
+        public const string PluginVersion = "1.1.2";
 
         private const float DamageTickInterval = 0.5f;
         private const float MultiplierTickInterval = 0.2f;
@@ -40,8 +40,6 @@ namespace DefenseBudget
         public static ConfigEntry<float> InterestRatePerSecond;
         public static ConfigEntry<float> DefaultDamagePerSecond;
         public static ConfigEntry<float> DeficitSpendingBonusPerStack;
-        public static ConfigEntry<KeyboardShortcut> DebugSpawnItemKey;
-        public static ConfigEntry<KeyboardShortcut> DebugSpawnPackKey;
 
         private static readonly List<CostTracker> costTrackers = new List<CostTracker>();
 
@@ -99,10 +97,6 @@ namespace DefenseBudget
                 "Fraction of maximum health lost per second while debt exceeds the debt limit.");
             DeficitSpendingBonusPerStack = Config.Bind("DefenseBudget", "DeficitSpendingBonusPerStack", 0.15f,
                 "Damage bonus per stack while in debt ('deficit spending'). Set to 0 to disable.");
-            DebugSpawnItemKey = Config.Bind("Debug", "SpawnItemKey", new KeyboardShortcut(KeyCode.F3),
-                "Drops a Defense Budget at your feet for testing (host only). Set to an empty shortcut to disable.");
-            DebugSpawnPackKey = Config.Bind("Debug", "SpawnPackKey", new KeyboardShortcut(KeyCode.F4),
-                "Drops one of each pack item (Savings Bond, Accounts Receivable, Golden Parachute, Overtime Pay) for testing (host only).");
         }
 
         private void CreateItem()
@@ -485,50 +479,6 @@ namespace DefenseBudget
             else
             {
                 moneyText.targetText.color = moneyTextOriginalColor;
-            }
-        }
-
-        // ---------------------------------------------------------------
-        // Debug
-        // ---------------------------------------------------------------
-
-        private void Update()
-        {
-            bool spawnLunar = DebugSpawnItemKey.Value.IsDown();
-            bool spawnPack = DebugSpawnPackKey.Value.IsDown();
-            if ((!spawnLunar && !spawnPack) || !NetworkServer.active || !Run.instance)
-            {
-                return;
-            }
-            var localUser = LocalUserManager.GetFirstLocalUser();
-            var body = localUser?.cachedBody;
-            if (!body)
-            {
-                return;
-            }
-            // body.transform compiles against RoR2's private cached field and throws
-            // FieldAccessException at runtime; go through the GameObject instead.
-            var forward = body.gameObject.transform.forward;
-            if (spawnLunar)
-            {
-                Log.Info("Debug: spawning Defense Budget");
-                PickupDropletController.CreatePickupDroplet(
-                    PickupCatalog.FindPickupIndex(itemDef.itemIndex),
-                    body.corePosition + Vector3.up * 1.5f,
-                    forward * 10f);
-            }
-            if (spawnPack)
-            {
-                Log.Info("Debug: spawning item pack");
-                var packDefs = new[] { SavingsBond.Def, AccountsReceivable.Def, GoldenParachute.Def, OvertimePay.Def };
-                for (int i = 0; i < packDefs.Length; i++)
-                {
-                    var direction = Quaternion.AngleAxis(-30f + 20f * i, Vector3.up) * forward;
-                    PickupDropletController.CreatePickupDroplet(
-                        PickupCatalog.FindPickupIndex(packDefs[i].itemIndex),
-                        body.corePosition + Vector3.up * 1.5f,
-                        direction * 10f);
-                }
             }
         }
 

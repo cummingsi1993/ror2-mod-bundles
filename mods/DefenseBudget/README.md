@@ -8,7 +8,7 @@ A Risk of Rain 2 mod adding a pack of **income-themed items** built around one e
 | **Savings Bond** | White | Every 10s, earn 2% (+2%/stack) interest on held gold |
 | **Accounts Receivable** | Green | Damaging an enemy marks it; marked enemies pay you +10% (+10%/stack) of their bounty when killed by anyone |
 | **Golden Parachute** | Red | Lethal damage instead costs a difficulty-scaled severance fee (drawing on Defense Budget credit if short) and leaves you at 15% HP; 45s cooldown (-25%/stack) |
-| **Overtime Pay** | Void (corrupts Roll of Pennies) | Heal 0.75% (+0.75%/stack) max HP per second. Healing past full health (including from teammates) steadily pays one small chest's worth of gold per 400% max HP overhealed, whenever the run timer is running (combat only where it's paused). Safety cap 10 (+10/stack) chests' worth per minute |
+| **Overtime Pay** | Void (corrupts Roll of Pennies) | Heal 0.75% (+0.75%/stack) max HP per second. Healing past full health (including from teammates) steadily pays one small chest's worth of gold per 100% max HP overhealed, whenever the run timer is running (combat only where it's paused). Safety cap 10 (+10/stack) chests' worth per minute |
 | **Artifact of Communism** | Artifact | All gold is one shared pool: everyone earns into it and spends from it. Total income is multiplied by playerCount − 0.25×(playerCount−1) — a bit less than full per-player income. Solo unaffected |
 
 All numbers are config entries (`Isaac_Cummings.DefenseBudget.cfg`), one section per item.
@@ -52,10 +52,6 @@ dotnet build DefenseBudget/DefenseBudget.csproj
 ```
 
 Building auto-copies the DLL into the `mod_testing` profile. Package for Thunderstore with `powershell -File tools/package.ps1`.
-
-## Testing
-
-Press **F3** in a run (host only) to drop a Defense Budget at your feet (F2 is taken by PowerMultiply's spawner). Configurable/disable-able via `Debug > SpawnItemKey` in the config file.
 
 ## Implementation notes
 
