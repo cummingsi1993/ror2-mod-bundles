@@ -24,6 +24,7 @@ Pairs with [DefenseBudget](https://thunderstore.io/c/riskofrain2/p/Isaac/Defense
 
 ## Changelog
 
+- **1.0.3** — Hotfix: 1.0.2's Dropshipping referenced a game field that no longer exists in the current Risk of Rain 2 version, which could break item pickups for everyone. It now looks the value up safely, and Dropshipping's tracking can never block a pickup again.
 - **1.0.2** — New green item **Purchase Order** and new lunar **Dropshipping**. **Recall Notice** nerfed: it now has its own per-stage cap and drops void items one tier down.
 - **1.0.1** — Removed the debug item-drop hotkey.
 - **1.0.0** — Initial release.

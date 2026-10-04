@@ -15,7 +15,7 @@ namespace SupplyChain
         public const string PluginGUID = PluginAuthor + "." + PluginName;
         public const string PluginAuthor = "Isaac_Cummings";
         public const string PluginName = "SupplyChain";
-        public const string PluginVersion = "1.0.2";
+        public const string PluginVersion = "1.0.3";
 
         public void Awake()
         {
