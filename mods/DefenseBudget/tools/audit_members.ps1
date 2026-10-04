@@ -38,6 +38,7 @@ $usage = @{
     'RoR2.MinionOwnership' = @('ownerMaster')
     'RoR2.Orbs.OrbManager' = @('instance','AddOrb')
     'RoR2.InfiniteTowerRun' = @('waveController')
+    'RoR2.SceneExitController' = @('isRunning')
     'RoR2.InfiniteTowerWaveController' = @('isFinished')
     'RoR2.Orbs.Orb' = @('origin','target')
     'RoR2.Orbs.GoldOrb' = @('goldAmount','scaleOrb')

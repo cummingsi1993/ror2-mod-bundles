@@ -4,7 +4,7 @@ Three themed Risk of Rain 2 bundles, one economic universe: **DefenseBudget** ta
 
 | Bundle | Theme | Status |
 |---|---|---|
-| DefenseBudget | Your gold as a resource and a liability | **Published** (1.1.0) |
+| DefenseBudget | Your gold as a resource and a liability | **Published** (1.1.1) |
 | SupplyChain | Item-count manipulation | **Published** (1.0.0; 1.0.1 in draft PR #4) |
 | AuditDepartment | The monster director's credit economy | **Published** (1.0.0) |
 
@@ -19,7 +19,7 @@ Three themed Risk of Rain 2 bundles, one economic universe: **DefenseBudget** ta
 | Savings Bond | White | Every 10s, earn 2% (+2%/stack) interest on held gold |
 | Accounts Receivable | Green | Damaging an enemy marks it; marked enemies pay an extra 10% (+10%/stack) of their bounty when killed by anyone |
 | Golden Parachute | Red | On lethal damage, pay a difficulty-scaled severance fee (on credit if you carry a Defense Budget) to survive at 15% health. Recharges 45s (−25%/stack) |
-| Overtime Pay | Void (corrupts Roll of Pennies) | Heal 0.75% (+0.75%/stack) max HP/sec; healing past full health (yours or teammates') steadily pays one small chest's worth of gold per 100% max HP overhealed while the run timer runs (combat-only where it's paused). Healing items raise the trickle |
+| Overtime Pay | Void (corrupts Roll of Pennies) | Heal 0.75% (+0.75%/stack) max HP/sec; healing past full health (yours or teammates') steadily pays one small chest's worth of gold per 400% max HP overhealed while the run timer runs (combat-only where it's paused). Healing items raise the trickle |
 | Defense Budget | Lunar | The flagship — see below |
 | Artifact of Communism | Artifact | All gold belongs to the collective: one shared pool everyone earns into and spends from, with a small configurable overhead |
 

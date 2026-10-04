@@ -73,8 +73,10 @@ namespace DefenseBudget.Items
             ContributionHealPerStack = config.Bind("OvertimePay", "ContributionHealPerStack", 0.0075f,
                 "Fraction of maximum health (health + shield) healed per second, per stack. Works like regeneration: " +
                 "no crits, no Aegis barrier, no N'kuhana's charge. Rejuvenation Rack and the Eclipse healing penalty apply.");
-            ChestsPerFullOverheal = config.Bind("OvertimePay", "ChestsPerFullOverheal", 1f,
-                "Small chests' worth of gold earned per 100% of maximum health overhealed (0.5 = one chest per 200%). " +
+            // key renamed from ChestsPerFullOverheal in 1.1.1 so the lowered default replaces the
+            // 1.0 that 1.1.0 wrote into everyone's config (BepInEx keeps saved values over new defaults)
+            ChestsPerFullOverheal = config.Bind("OvertimePay", "ChestsPer100PercentOverheal", 0.25f,
+                "Small chests' worth of gold earned per 100% of maximum health overhealed (0.25 = one chest per 400%). " +
                 "Does not grow with stacks. A small chest's price scales with difficulty over time.");
             MaxChestsPerMinutePerStack = config.Bind("OvertimePay", "MaxChestsPerMinutePerStack", 10f,
                 "Safety cap per stack, in small chests' worth per minute; only extreme healing builds reach it. " +
@@ -150,7 +152,7 @@ namespace DefenseBudget.Items
                     $"<style=cIsVoid>Corrupts all Rolls of Pennies</style>.";
             LanguageAPI.Add("OVERTIME_PAY_DESC", desc);
             LanguageAPI.Add("OVERTIME_PAY_LORE",
-                "TIMESHEET ADDENDUM, FORM 7-VOID\n\nHours worked beyond full capacity are compensated at the overtime rate: one (1) small container of currency per one (1) complete person.\nOvertime accrues continuously while the employee is in perfect health and the clock is running. Hours spent idling in the break room, where the clock is stopped, are not billable.\n\nPayroll caps overtime per pay period. Vitality in excess of the cap is forfeited to the company. Management thanks you for going above and beyond. Management always does.");
+                "TIMESHEET ADDENDUM, FORM 7-VOID\n\nHours worked beyond full capacity are compensated at the overtime rate: one (1) small container of currency per four (4) complete persons.\nOvertime accrues continuously while the employee is in perfect health and the clock is running. Hours spent idling in the break room, where the clock is stopped, are not billable.\n\nPayroll caps overtime per pay period. Vitality in excess of the cap is forfeited to the company. Management thanks you for going above and beyond. Management always does.");
         }
 
         // ---------------------------------------------------------------
@@ -247,6 +249,12 @@ namespace DefenseBudget.Items
         // everywhere.
         private static bool IsOnTheClock(Account account)
         {
+            // Leaving a stage converts every wallet to experience and only teleports once
+            // they have all sat at 0 for a moment — a steady trickle would stall the exit.
+            if (SceneExitController.isRunning)
+            {
+                return false;
+            }
             bool inCombat = Time.fixedTime <= account.lastEngaged + CombatWindow.Value;
             if (inCombat)
             {
@@ -366,7 +374,8 @@ namespace DefenseBudget.Items
                     }
                 }
 
-                if (account.goldCarry >= MinPayoutGold && now - account.lastPayoutTime >= MinPayoutInterval)
+                // held during a stage exit (see IsOnTheClock) and paid out on the next stage
+                if (account.goldCarry >= MinPayoutGold && now - account.lastPayoutTime >= MinPayoutInterval && !SceneExitController.isRunning)
                 {
                     uint gold = (uint)account.goldCarry;
                     account.goldCarry -= gold;
