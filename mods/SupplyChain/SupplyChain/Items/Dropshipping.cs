@@ -127,7 +127,7 @@ namespace SupplyChain.Items
                 return; // equipment, lunar coins, etc. are not "items"
             }
             var itemDef = ItemCatalog.GetItemDef(pickupDef.itemIndex);
-            if (!itemDef || itemDef.hidden || itemDef.tier == ItemTier.NoTier)
+            if (!itemDef || itemDef.hidden || !SupplyChainPlugin.IsCopyableTier(itemDef.tier))
             {
                 return;
             }

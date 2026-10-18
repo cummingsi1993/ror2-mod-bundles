@@ -111,7 +111,8 @@ namespace SupplyChain
             }
 
             var pickupDef = PickupCatalog.GetPickupDef(self.dropPickup);
-            if (pickupDef == null || pickupDef.itemIndex == ItemIndex.None)
+            if (pickupDef == null || pickupDef.itemIndex == ItemIndex.None
+                || !SupplyChainPlugin.IsStandardTier(pickupDef.itemTier))
             {
                 orig(self);
                 return;
@@ -121,7 +122,8 @@ namespace SupplyChain
             if (ArtifactOfDiversification.Enabled
                 && inventory.GetItemCount(pickupDef.itemIndex) >= ArtifactOfDiversification.RerollThreshold.Value)
             {
-                self.RollItem();
+                // Roll() honours the chest's drop table (RollItem is obsolete and ignores it)
+                self.Roll();
                 var rerolled = PickupCatalog.GetPickupDef(self.dropPickup);
                 Log.Info($"Diversification reroll: {pickupDef.internalName} -> {rerolled?.internalName ?? "?"}");
                 pickupDef = rerolled ?? pickupDef;
