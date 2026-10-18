@@ -7,7 +7,7 @@ namespace SupplyChain.Artifacts
 {
     // When a chest would drop an item the opener already owns a pile of, it rerolls
     // once. Runs wider, not taller. Reroll logic lives in ChestHooks (uses the chest's
-    // own public RollItem(), so the reroll respects the chest's real drop table).
+    // own public Roll(), so the reroll respects the chest's real drop table).
     internal static class ArtifactOfDiversification
     {
         internal static ArtifactDef Def;

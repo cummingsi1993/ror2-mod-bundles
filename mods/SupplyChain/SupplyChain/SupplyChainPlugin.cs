@@ -15,28 +15,69 @@ namespace SupplyChain
         public const string PluginGUID = PluginAuthor + "." + PluginName;
         public const string PluginAuthor = "Isaac_Cummings";
         public const string PluginName = "SupplyChain";
-        public const string PluginVersion = "1.0.2";
+        public const string PluginVersion = "1.0.3";
 
         public void Awake()
         {
             Log.Init(Logger);
 
-            BulkOrder.Init(Config);
-            LoadedDice.Init(Config);
-            StandingOrder.Init(Config);
-            ForceMultiplier.Init(Config);
-            PyramidScheme.Init(Config);
-            PurchaseOrder.Init(Config);
-            Dropshipping.Init(Config);
-            RecallNotice.Init(Config);
-            ArtifactOfDiversification.Init(Config);
-            ChestHooks.Init();
+            // each feature isolated: a game patch that breaks one hook (1.5.0 broke
+            // Pyramid Scheme's) must not take the rest of the bundle down with it
+            Safe("Bulk Order", () => BulkOrder.Init(Config));
+            Safe("Loaded Dice", () => LoadedDice.Init(Config));
+            Safe("Standing Order", () => StandingOrder.Init(Config));
+            Safe("Force Multiplier", () => ForceMultiplier.Init(Config));
+            Safe("Pyramid Scheme", () => PyramidScheme.Init(Config));
+            Safe("Purchase Order", () => PurchaseOrder.Init(Config));
+            Safe("Dropshipping", () => Dropshipping.Init(Config));
+            Safe("Recall Notice", () => RecallNotice.Init(Config));
+            Safe("Artifact of Diversification", () => ArtifactOfDiversification.Init(Config));
+            Safe("chest hooks", ChestHooks.Init);
 
             // index sets used by drop filtering and stack amplification, resolvable only
             // after catalogs load
             RoR2Application.onLoad += BuildIndexSets;
 
             Log.Info($"{PluginName} loaded.");
+        }
+
+        private static void Safe(string feature, System.Action init)
+        {
+            try
+            {
+                init();
+            }
+            catch (System.Exception e)
+            {
+                Log.Error($"{feature} failed to initialize and is disabled: {e}");
+            }
+        }
+
+        // Standard chest contents. 1.5.0 adds Cursed/Page/Hex tiers (DLC4); chest bonuses
+        // and command choices only apply to these.
+        internal static bool IsStandardTier(ItemTier tier)
+        {
+            return tier == ItemTier.Tier1 || tier == ItemTier.Tier2 || tier == ItemTier.Tier3 || tier == ItemTier.Boss;
+        }
+
+        // Tiers Pyramid Scheme and Dropshipping may copy: standard, lunar and void.
+        internal static bool IsCopyableTier(ItemTier tier)
+        {
+            switch (tier)
+            {
+                case ItemTier.Tier1:
+                case ItemTier.Tier2:
+                case ItemTier.Tier3:
+                case ItemTier.Boss:
+                case ItemTier.Lunar:
+                case ItemTier.VoidTier1:
+                case ItemTier.VoidTier2:
+                case ItemTier.VoidTier3:
+                case ItemTier.VoidBoss:
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         // Pickup indices of this bundle's items — bonus drops never roll these (the

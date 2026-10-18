@@ -1,6 +1,7 @@
 using BepInEx.Configuration;
 using R2API;
 using RoR2;
+using System;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -86,9 +87,30 @@ namespace SupplyChain.Items
             return Mathf.Max(1, playerCount / divisor);
         }
 
+        private static bool loggedFailure;
+
+        // Runs on EVERY item pickup in the game, so it must never be able to break one:
+        // orig first, and our counting lives in a separate method behind a try/catch
+        // (1.0.2 shipped a member the runtime doesn't have, which threw out of here).
         private static void CountCollection(On.RoR2.GenericPickupController.orig_AttemptGrant orig, GenericPickupController self, CharacterBody body)
         {
             orig(self, body);
+            try
+            {
+                Count(self, body);
+            }
+            catch (Exception e)
+            {
+                if (!loggedFailure)
+                {
+                    loggedFailure = true;
+                    Log.Error($"Dropshipping: counting a pickup failed (pickups are unaffected): {e}");
+                }
+            }
+        }
+
+        private static void Count(GenericPickupController self, CharacterBody body)
+        {
             if (!NetworkServer.active || granting || !self || !body)
             {
                 return;
@@ -98,18 +120,19 @@ namespace SupplyChain.Items
             {
                 return; // only player collections count
             }
-            var pickupDef = PickupCatalog.GetPickupDef(self.pickupIndex);
+            var pickupIndex = PickupCompat.GetPickupIndex(self);
+            var pickupDef = PickupCatalog.GetPickupDef(pickupIndex);
             if (pickupDef == null || pickupDef.itemIndex == ItemIndex.None)
             {
                 return; // equipment, lunar coins, etc. are not "items"
             }
             var itemDef = ItemCatalog.GetItemDef(pickupDef.itemIndex);
-            if (!itemDef || itemDef.hidden || itemDef.tier == ItemTier.NoTier)
+            if (!itemDef || itemDef.hidden || !SupplyChainPlugin.IsCopyableTier(itemDef.tier))
             {
                 return;
             }
             // generated items exclude generators (Fuzzy Dice doctrine)
-            if (SupplyChainPlugin.BundlePickups.Contains(self.pickupIndex))
+            if (SupplyChainPlugin.BundlePickups.Contains(pickupIndex))
             {
                 return;
             }

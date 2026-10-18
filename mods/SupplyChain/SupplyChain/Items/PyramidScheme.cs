@@ -46,7 +46,7 @@ namespace SupplyChain.Items
                 "It's not what you think. It's a reverse funnel system. The structure is more of a triangle, really. Your downline practically builds itself once you stop being so negative. Anyway — about your buy-in.");
 
             On.RoR2.CharacterMaster.OnInventoryChanged += DetectPickup;
-            On.RoR2.CharacterMaster.GiveMoney += PayUpline;
+            GiveMoneyCompat.Add(PayUpline);
         }
 
         private static void DetectPickup(On.RoR2.CharacterMaster.orig_OnInventoryChanged orig, CharacterMaster self)
@@ -81,7 +81,7 @@ namespace SupplyChain.Items
                         continue;
                     }
                     var itemDef = ItemCatalog.GetItemDef(index);
-                    if (!itemDef || itemDef.hidden || itemDef.tier == ItemTier.NoTier)
+                    if (!itemDef || itemDef.hidden || !SupplyChainPlugin.IsCopyableTier(itemDef.tier))
                     {
                         continue;
                     }
@@ -103,9 +103,10 @@ namespace SupplyChain.Items
             }
         }
 
-        private static void PayUpline(On.RoR2.CharacterMaster.orig_GiveMoney orig, CharacterMaster self, uint amount)
+        // bypassStatManager marks earmarked grants (the Trial Quest chest stipend): no tithe
+        private static void PayUpline(GiveMoneyCompat.Orig orig, CharacterMaster self, uint amount, bool bypassStatManager)
         {
-            if (NetworkServer.active && amount > 0 && self.inventory && Def != null && Def.itemIndex != ItemIndex.None)
+            if (NetworkServer.active && amount > 0 && !bypassStatManager && self.inventory && Def != null && Def.itemIndex != ItemIndex.None)
             {
                 int stacks = InventoryCompat.GetPermanentCount(self.inventory, Def.itemIndex);
                 if (stacks > 0)
@@ -113,7 +114,7 @@ namespace SupplyChain.Items
                     amount = (uint)Math.Round(amount * Math.Pow(1.0 - Mathf.Clamp01(TithePerStack.Value), stacks));
                 }
             }
-            orig(self, amount);
+            orig(self, amount, bypassStatManager);
         }
     }
 }
