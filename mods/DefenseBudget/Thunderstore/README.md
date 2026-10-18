@@ -35,6 +35,7 @@ BepInExPack, HookGenPatcher, R2API (Items, Language, Networking, ContentManageme
 
 ## Changelog
 
+- **1.1.3** — Fixed for Risk of Rain 2 1.5.0 (Hallowed Concepts patch): the patch changed how the game hands out gold, which stopped the whole mod from loading. Trial Quest chest stipends are no longer taxed or used for debt repayment. Overtime Pay no longer pays for heals that new DLC items convert into other effects.
 - **1.1.2** — Overtime Pay is back at 1.1.0's rate (one small chest's worth per 100% overheal); playtesters found it better balanced than 1.1.1's quarter rate. It uses 1.1.0's config key again (`ChestsPerFullOverheal`). Removed the debug item-drop hotkeys (F3/F4).
 - **1.1.1** — Fixed: with Overtime Pay (or Savings Bond) the teleporter could get stuck leaving the stage, because the exit waits for everyone's gold to drain to 0 and the gold kept trickling in. Overtime Pay now pays a quarter as much (one small chest's worth per 400% overheal, was 100%); the config key changed to `ChestsPer100PercentOverheal` so the new value applies automatically.
 - **1.1.0** — The deficit now shows on the gold counter for every player, not just the host (it was server-only; clients always saw 0). New void item **Overtime Pay** replaces Final Notice as the Roll of Pennies corruption. Adds an R2API_Networking dependency.

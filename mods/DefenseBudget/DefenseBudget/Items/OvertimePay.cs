@@ -228,6 +228,14 @@ namespace DefenseBudget.Items
                 // scale nonRegen overheal down by the holder's Aegis stacks (read via
                 // inventory.GetItemCount(RoR2Content.Items.BarrierOnOverHeal) — itemCounts is
                 // private at runtime), making Aegis a barrier-vs-gold tradeoff.
+                // 1.5.0: DLC4 heal converters (ConvertHealingToAttackSpeed, StealBackHealth)
+                // leave the tapped local equal to the whole heal even below full health;
+                // health still missing after the heal can't have been overhealed
+                overheal -= Mathf.Max(0f, healthComponent.fullHealth - healthComponent.health);
+                if (!(overheal > 0f))
+                {
+                    return;
+                }
                 float weight = nonRegen ? 1f : RegenWeight.Value;
                 // normalized by combined max health, so Transcendence (1 max HP) can't turn
                 // every heal into a full bar of overheal

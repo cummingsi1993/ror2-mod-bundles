@@ -41,7 +41,7 @@ namespace DefenseBudget.Artifacts
             // Registered BEFORE the plugin's tax/debt GiveMoney hook, making this the
             // innermost link: Defense Budget taxes and debt repayment run first, and only
             // the remainder is collectivized.
-            On.RoR2.CharacterMaster.GiveMoney += PoolIncome;
+            GiveMoneyCompat.Add(PoolIncome);
             Run.onRunStartGlobal += _ =>
             {
                 pool = 0;
@@ -53,11 +53,11 @@ namespace DefenseBudget.Artifacts
         internal static bool Enabled =>
             Def && RunArtifactManager.instance && RunArtifactManager.instance.IsArtifactEnabled(Def);
 
-        private static void PoolIncome(On.RoR2.CharacterMaster.orig_GiveMoney orig, CharacterMaster self, uint amount)
+        private static void PoolIncome(GiveMoneyCompat.Orig orig, CharacterMaster self, uint amount, bool bypassStatManager)
         {
             if (!NetworkServer.active || amount == 0 || !Enabled || !self.playerCharacterMasterController)
             {
-                orig(self, amount);
+                orig(self, amount, bypassStatManager);
                 return;
             }
             EnsureInitialized();

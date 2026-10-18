@@ -25,7 +25,7 @@ namespace DefenseBudget
         public const string PluginGUID = PluginAuthor + "." + PluginName;
         public const string PluginAuthor = "Isaac_Cummings";
         public const string PluginName = "DefenseBudget";
-        public const string PluginVersion = "1.1.2";
+        public const string PluginVersion = "1.1.3";
 
         private const float DamageTickInterval = 0.5f;
         private const float MultiplierTickInterval = 0.2f;
@@ -74,7 +74,7 @@ namespace DefenseBudget
             On.RoR2.PurchaseInteraction.Awake += PurchaseInteraction_Awake;
             On.RoR2.PurchaseInteraction.CanBeAffordedByInteractor += PurchaseInteraction_CanBeAffordedByInteractor;
             On.RoR2.PurchaseInteraction.OnInteractionBegin += PurchaseInteraction_OnInteractionBegin;
-            On.RoR2.CharacterMaster.GiveMoney += CharacterMaster_GiveMoney;
+            GiveMoneyCompat.Add(CharacterMaster_GiveMoney);
             On.RoR2.HealthComponent.TakeDamage += HealthComponent_TakeDamage;
             On.RoR2.UI.HUD.Update += HUD_Update;
             Run.onRunStartGlobal += _ => costTrackers.Clear();
@@ -392,9 +392,11 @@ namespace DefenseBudget
             orig(self, activator);
         }
 
-        private void CharacterMaster_GiveMoney(On.RoR2.CharacterMaster.orig_GiveMoney orig, CharacterMaster self, uint amount)
+        // bypassStatManager marks earmarked grants (the Trial Quest chest stipend): they pass
+        // untaxed and skip debt repayment, so an indebted holder can still buy those chests.
+        private static void CharacterMaster_GiveMoney(GiveMoneyCompat.Orig orig, CharacterMaster self, uint amount, bool bypassStatManager)
         {
-            if (NetworkServer.active && amount > 0 && !applyingDefaultDamage)
+            if (NetworkServer.active && amount > 0 && !applyingDefaultDamage && !bypassStatManager)
             {
                 // the defense budget taxes all gold income, then debt repayment takes the rest
                 int stacks = GetStacks(self);
@@ -410,7 +412,7 @@ namespace DefenseBudget
                     amount -= payment;
                 }
             }
-            orig(self, amount);
+            orig(self, amount, bypassStatManager);
         }
 
         // ---------------------------------------------------------------
